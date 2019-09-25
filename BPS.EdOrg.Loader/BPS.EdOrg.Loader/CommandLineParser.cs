@@ -25,6 +25,10 @@ namespace BPS.EdOrg.Loader
                 .WithDescription("The Crosswalk web API url (i.e. http://server/api/v1.0)")
                 .SetDefault(ConfigurationManager.AppSettings["CrossWalkStaffApiUrl"]);
 
+            Setup(arg => arg.CrossWalkServiceCenterApiUrl).As('m', "CrossWalkServiceCenterApiUrl")
+                .WithDescription("The Crosswalk web API url (i.e. http://server/api/v1.0)")
+                .SetDefault(ConfigurationManager.AppSettings["CrossWalkServiceCenterApiUrl"]);
+
             Setup(arg => arg.CrossWalkKey).As('q', "key")
                  .WithDescription("The Crosswalk web API OAuth key")
                  .SetDefault(ConfigurationManager.AppSettings["CrossWalkKey"]);
@@ -77,7 +81,7 @@ namespace BPS.EdOrg.Loader
                 .WithDescription("The web API OAuth key")
                 .SetDefault(ConfigurationManager.AppSettings["OAuthKey"]);
 
-            Setup(arg => arg.MetadataUrl).As('m', "metadataurl")
+            Setup(arg => arg.MetadataUrl).As('s', "metadataurl")
                 .WithDescription("The metadata url (i.e. http://server/metadata)")
                 .SetDefault(ConfigurationManager.AppSettings["SwaggerUrl"]);
 
@@ -85,7 +89,7 @@ namespace BPS.EdOrg.Loader
                 .WithDescription("The OAuth url (i.e. http://server/oauth)")
                 .SetDefault(ConfigurationManager.AppSettings["OAuthUrl"]);
 
-            Setup(arg => arg.OauthSecret).As('s', "oauthsecret")
+            Setup(arg => arg.OauthSecret).As('v', "oauthsecret")
                  .WithDescription("The web API OAuth secret")
                  .SetDefault(ConfigurationManager.AppSettings["OAuthSecret"]);
 

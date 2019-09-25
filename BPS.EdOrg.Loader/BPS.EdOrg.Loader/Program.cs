@@ -65,6 +65,7 @@ namespace BPS.EdOrg.Loader
             Log.Info($"CrossWalk Cross Walk OAuth Url:   {configuration.CrossWalkOAuthUrl}");
             Log.Info($"CrossWalk School Api Url:   {configuration.CrossWalkSchoolApiUrl}");
             Log.Info($"CrossWalk Staff Api Url:   {configuration.CrossWalkStaffApiUrl}");
+            Log.Info($"CrossWalk ServiceCenter Api Url:   {configuration.CrossWalkServiceCenterApiUrl}");
             Log.Info($"School Year: {configuration.SchoolYear}");
             Log.Info($"CrossWalk Key:   {configuration.CrossWalkKey}");
             Log.Info($"CrossWalk Secret:   {configuration.CrossWalkSecret}");
@@ -159,15 +160,15 @@ namespace BPS.EdOrg.Loader
 
         private static void RunJobCodeFile(CommandLineParser param)
         {
-
-            // For JobCode_tbl.txt
-            //List<string> existingStaffId = GetStaffList(param.Object);
+            var serviceCenterids = GetServiceCenterList(param.Object);
+            // For JobCode_tbl.txt            
             CreateXmlJob(param.Object);
             var token = GetAuthToken();
             if (token != null)
-            {                
-                UpdateStaffEmploymentAssociationData(token);
+            {
                 UpdateStaffAssignmentAssociationData(token, param.Object);
+                UpdateStaffEmploymentAssociationData(token);
+                
             }
                 
             else throw new Exception("Token is not generated, ODS not updated");
@@ -869,6 +870,7 @@ namespace BPS.EdOrg.Loader
                 //nsmgr.AddNamespace("a", "http://ed-fi.org/0220");
                 XmlNodeList nodeList = xmlDoc.SelectNodes("//InterchangeStaffAssociation/StaffEducationOrganizationAssignmentAssociation");
                 var schoolDeptids = GetDeptList(configuration);
+                var serviceCenterids = GetServiceCenterList(configuration);
                 foreach (XmlNode node in nodeList)
                 {
                     // Extracting the data froom the XMl file
@@ -885,7 +887,7 @@ namespace BPS.EdOrg.Loader
 
                                 // setting the DeptId as EdOrgId for the staff, if no corresponding school is found
                                 if (educationOrganizationId == null)
-                                    schoolid = staffAssignmentNodeList.educationOrganizationIdValue;
+                                    schoolid = serviceCenterids.Where(x => x.DeptId.Equals(staffAssignmentNodeList.educationOrganizationIdValue)).FirstOrDefault().DeptId;
                                 else
                                     schoolid = educationOrganizationId.schoolId;
 
@@ -1603,12 +1605,40 @@ namespace BPS.EdOrg.Loader
             }
             catch (Exception ex)
             {
-                Log.Error($"Error while getting school list:{ex.Message}");
+                Log.Error($"Error while getting staff list:{ex.Message}");
             }
 
             return existingStaffIds;
         }
 
+
+        private static List<SchoolDept> GetServiceCenterList(Configuration configuration)
+        {
+
+            List<SchoolDept> existingDeptIds = new List<SchoolDept>();
+            try
+            {
+                TokenRetriever tokenRetriever = new TokenRetriever(ConfigurationManager.AppSettings["OAuthUrl"], ConfigurationManager.AppSettings["APP_Key"], ConfigurationManager.AppSettings["APP_Secret"]);
+
+                string token = tokenRetriever.ObtainNewBearerToken();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    Log.Info($"Crosswalk API token retrieved successfully");
+                    RestServiceManager restManager = new RestServiceManager(configuration, token, Log);
+                    existingDeptIds = restManager.GetServiceCenterList();
+                }
+                else
+                {
+                    Log.Error($"Error while retrieving access token for Crosswalk API");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error while getting staff list:{ex.Message}");
+            }
+
+            return existingDeptIds;
+        }
 
         /// <summary>
         /// Sending the log in the email

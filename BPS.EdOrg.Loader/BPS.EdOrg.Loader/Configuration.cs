@@ -12,6 +12,7 @@ namespace BPS.EdOrg.Loader
         public string CrossWalkOAuthUrl { get; set; }
         public string CrossWalkSchoolApiUrl { get; set; }
         public string CrossWalkStaffApiUrl { get; set; }
+        public string CrossWalkServiceCenterApiUrl { get; set; }
         public string CrossWalkKey { get; set; }
         public string CrossWalkSecret { get; set; }
         public string ApiUrl { get; set; }
@@ -53,6 +54,7 @@ namespace BPS.EdOrg.Loader
                         string.IsNullOrEmpty(CrossWalkOAuthUrl) ||
                         string.IsNullOrEmpty(CrossWalkSchoolApiUrl) ||
                         string.IsNullOrEmpty(CrossWalkStaffApiUrl) ||
+                        string.IsNullOrEmpty(CrossWalkServiceCenterApiUrl) ||
                         string.IsNullOrEmpty(CrossWalkKey) ||
                         string.IsNullOrEmpty(CrossWalkSecret)
                     )
@@ -87,7 +89,10 @@ namespace BPS.EdOrg.Loader
                     sb.AppendLine("Option 'p:corsswalkapiurl' parse error. Provided value is not a url.");
 
                 if (string.IsNullOrEmpty(CrossWalkStaffApiUrl) || !Uri.IsWellFormedUriString(CrossWalkStaffApiUrl, UriKind.Absolute))
-                    sb.AppendLine("Option 'p:corsswalkapiurl' parse error. Provided value is not a url.");
+                    sb.AppendLine("Option 'p:CrossWalkStaffApiUrl' parse error. Provided value is not a url.");
+
+                if (string.IsNullOrEmpty(CrossWalkServiceCenterApiUrl) || !Uri.IsWellFormedUriString(CrossWalkServiceCenterApiUrl, UriKind.Absolute))
+                    sb.AppendLine("Option 'p:CrossWalkServiceCenterApiUrl' parse error. Provided value is not a url.");
 
                 if (string.IsNullOrEmpty(XMLOutputPath) || !Directory.Exists(XMLOutputPath))
                     sb.AppendLine("Option 'd:data' parse error. Provided value is not a directory.");

@@ -77,7 +77,58 @@ namespace BPS.EdOrg.Loader
             return schoolDepts;
         }
 
+        public List<SchoolDept> GetServiceCenterList()
+        {
+            List<SchoolDept> schoolDepts = new List<SchoolDept>();
+            try
+            {
+                if (!string.IsNullOrEmpty(_accessToken))
+                {
+                    var httpClient = new RestClient(_configuration.CrossWalkServiceCenterApiUrl);
+                    int offset = 0, limit = 100;
+                    bool hasRecords = true;
+                    while (hasRecords)
+                    {
+                        var response = GetRestResponse(httpClient, offset, limit);
+                        offset += limit;
+                        if (response.StatusCode != HttpStatusCode.OK)
+                        {
+                            _log.Error($"Unable to retrieve staff list from {httpClient.BaseUrl}");
+                        }
+                        else
+                        {
+                            List<SchoolResponse> serviceCenterList = response.Data;
+                            foreach (var school in serviceCenterList)
+                            {
+                                string deptId = school.IdentificationCodes?
+                                    .Where(x => string.Equals(x.EducationOrganizationIdentificationSystemDescriptor, "school", StringComparison.OrdinalIgnoreCase))
+                                    .FirstOrDefault()?.IdentificationCode;
+                               
+                                if (!string.IsNullOrEmpty(deptId) && !string.Equals(deptId, "N/A", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    schoolDepts.Add(new SchoolDept { schoolId = school.schoolId, DeptId = deptId });
+                                }
+                            }
+                        }
 
+                        if (response.Data.Count == 0)
+                        {
+                            hasRecords = false;
+                        }
+                    }
+
+                }
+                else
+                {
+                    _log.Error($"Bearer token not provided for retrieving staff list from API");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Exception while retrieve serviceCenter list : {ex.Message}");
+            }
+            return schoolDepts;
+        }
         public List<string> GetStaffList()
         {
             List<string> existingStaffIds = new List<string>();
@@ -131,6 +182,7 @@ namespace BPS.EdOrg.Loader
 
 
 
+
         private IRestResponse<List<SchoolResponse>> GetRestResponse(RestClient httpClient, int offset , int limit)
         {
             var request = new RestRequest(Method.GET);
@@ -154,5 +206,7 @@ namespace BPS.EdOrg.Loader
             var response = httpClient.Execute<List<StaffResponse>>(request);
             return response;
         }
+
+        
     }
 }
