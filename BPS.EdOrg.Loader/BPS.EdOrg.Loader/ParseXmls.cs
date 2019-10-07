@@ -182,13 +182,15 @@ namespace BPS.EdOrg.Loader
                         XmlNodeList nodeList = GetDeptforLocation();
                         if (nodeList.Count > 0)
                         {
-                            var deptIdLocation = nodeList.Cast<XmlNode>().Where(n => n["Location"].InnerText == staffAssociationData.location).Select(x => x["StateOrganizationId"].InnerText).FirstOrDefault();
-                            if (deptIdLocation != null)
+                            var deptLoc = Constants.GetDeptMultipleLocation(staffAssociationData.location);
+                            var dept = deptLoc ?? nodeList.Cast<XmlNode>().Where(n => n["Location"].InnerText == staffAssociationData.location).Select(x => x["StateOrganizationId"].InnerText).FirstOrDefault(); 
+                                     
+                            if (dept != null)
                             {
                                 // If departments are different that means Physical location is different so  we have 2 assignments for the staff
-                                if (!staffAssociationData.deptId.Equals(deptIdLocation))
+                                if (!staffAssociationData.deptId.Equals(dept))
                                 {
-                                    staffAssociationData.deptId = deptIdLocation;
+                                    staffAssociationData.deptId = dept;
                                     _log.Debug($"Creating node for {staffAssociationData.staffId}-{staffAssociationData.deptId}-{staffAssociationData.endDate}");
                                     CreateNodeJob(staffAssociationData, descCode, empClassCode, jobOrderAssignment, writer);
                                     numberOfRecordsCreatedInXml++;

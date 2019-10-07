@@ -49,6 +49,7 @@ namespace BPS.EdOrg.Loader
                 return "Other";
         }
 
+
         public static string JobOrderAssignment(string jobcode)
         {
             if (jobcode.Equals("P"))
@@ -57,6 +58,23 @@ namespace BPS.EdOrg.Loader
                 return "2";
             else
                 return "0";
+        }
+        public static string GetDeptMultipleLocation(string loc)
+        {
+            if (loc.Equals("BPS008"))
+                return "101206";
+            if (loc.Equals("BPS045"))
+                return "101411";
+            if (loc.Equals("BPS046"))
+                return "101351";
+            if (loc.Equals("BPS140"))
+                return "101204";
+            if (loc.Equals("BPS158")) 
+                return "101307";
+            if (loc.Equals("BPS161"))
+                return "101256";
+            else
+                return null;
         }
 
         public static string StaffClassificationDescriptorCode(string jobCode, int deptID, string unionCode)
