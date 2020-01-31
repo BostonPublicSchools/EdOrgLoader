@@ -44,8 +44,8 @@ namespace BPS.EdOrg.Loader.ApiClient
         public string ObtainNewBearerToken()
         {
             var oauthClient = new RestClient(oauthUrl);
-            var accessCode = GetAccessCode(oauthClient);
-            return GetBearerToken(oauthClient, accessCode);
+            //var accessCode = GetAccessCode(oauthClient);
+            return GetBearerToken(oauthClient);
         }
 
         private string GetAccessCode(IRestClient oauthClient)
@@ -70,13 +70,16 @@ namespace BPS.EdOrg.Loader.ApiClient
             return accessCodeResponse.Data.Code;
         }
 
-        private string GetBearerToken(IRestClient oauthClient, string accessCode)
+        private string GetBearerToken(IRestClient oauthClient)
         {
             var bearerTokenRequest = new RestRequest("oauth/token", Method.POST);
             bearerTokenRequest.AddParameter("Client_id", clientKey);
             bearerTokenRequest.AddParameter("Client_secret", clientSecret);
-            bearerTokenRequest.AddParameter("Code", accessCode);
-            bearerTokenRequest.AddParameter("Grant_type", "authorization_code");
+            bearerTokenRequest.AddParameter("Grant_type", "client_credentials");
+            // version 2.5
+            //bearerTokenRequest.AddParameter("Code", accessCode);
+            //bearerTokenRequest.AddParameter("Grant_type", "authorization_code");
+
 
             var bearerTokenResponse = oauthClient.Execute<BearerTokenResponse>(bearerTokenRequest);
             if (bearerTokenResponse.StatusCode != HttpStatusCode.OK)

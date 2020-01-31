@@ -1,6 +1,10 @@
-﻿using System.Configuration;
+﻿using System;
+using System.Configuration;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using BPS.EdOrg.Loader.ApiClient;
 using RestSharp;
+using RestSharp.Authenticators;
 
 namespace BPS.EdOrg.Loader.EdFi.Api
 {
@@ -20,7 +24,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
         public IRestResponse PostData(string jsonData, RestClient client, string token)
         {
             var request = new RestRequest(Method.POST);
-            request.AddHeader("Authorization", "Bearer  " + token);
+            request.AddHeader("Authorization", "Bearer " + token);
             request.AddParameter("application/json; charset=utf-8", jsonData, ParameterType.RequestBody);
             request.RequestFormat = DataFormat.Json;
             return client.Execute(request);
@@ -34,7 +38,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
         public IRestResponse PutData(string jsonData, RestClient client, string token)
         {
             var request = new RestRequest(Method.PUT);
-            request.AddHeader("Authorization", "Bearer  " + token);
+            request.AddHeader("Authorization", "Bearer " + token);
             request.AddParameter("application/json; charset=utf-8", jsonData, ParameterType.RequestBody);
             request.RequestFormat = DataFormat.Json;
             return client.Execute(request);
@@ -47,11 +51,18 @@ namespace BPS.EdOrg.Loader.EdFi.Api
         /// <returns></returns>
         public IRestResponse GetData(RestClient client, string token)
         {
+
             var request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", "Bearer  " + token);
-            request.AddParameter("application/json; charset=utf-8", ParameterType.RequestBody);
+            client.Authenticator = new HttpBasicAuthenticator("UserA", "123");
+            request.AddParameter("Authorization", string.Format("Bearer " + token), ParameterType.HttpHeader);
+            request.AddHeader("Accept", "application/json");
             request.RequestFormat = DataFormat.Json;
-            return client.Execute(request);
+            return client.Execute(request);            
+           
         }
+
+       
+
+
     }
 }

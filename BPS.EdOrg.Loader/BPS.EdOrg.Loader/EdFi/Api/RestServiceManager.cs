@@ -50,11 +50,12 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                                     .Where(x => string.Equals(x.EducationOrganizationIdentificationSystemDescriptor, "school", StringComparison.OrdinalIgnoreCase))
                                     .FirstOrDefault()?.IdentificationCode;
                                 if (deptId == null || deptId.Equals("N/A"))
-                                    deptId = school.schoolId;
+                                    deptId = school.SchoolId;
                                 if (!string.IsNullOrEmpty(deptId) && !string.Equals(deptId, "N/A", StringComparison.OrdinalIgnoreCase))
                                 {
                                     existingDeptIds.Add(deptId);
-                                    schoolDepts.Add(new SchoolDept { SchoolId = school.schoolId, DeptId = deptId, OperationalStatus = school.operationalStatusType });
+                                    schoolDepts.Add(new SchoolDept { SchoolId = school.SchoolId, DeptId = deptId, OperationalStatus = school.OperationalStatusDescriptor.Split('#').Last()
+                                });
                                 }
                             }
                         }

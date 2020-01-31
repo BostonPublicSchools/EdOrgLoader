@@ -295,7 +295,7 @@ namespace BPS.EdOrg.Loader.Controller
                             var educationOrganizationId = schoolDeptids.Where(x => x.DeptId.Equals(staffAssignmentNodeList.EducationOrganizationIdValue) && x.OperationalStatus.Equals("Active")).FirstOrDefault();
 
                             // setting the DeptId as EdOrgId for the staff, if no corresponding school is found
-                            if (educationOrganizationId != null) schoolid = educationOrganizationId.SchoolId;
+                             if (educationOrganizationId != null) schoolid = educationOrganizationId.SchoolId;
                             if (!string.IsNullOrEmpty(schoolid))
                             {
                                 //Inserting new Assignments and updating the postioTitle with JobCode - JobDesc
@@ -380,11 +380,11 @@ namespace BPS.EdOrg.Loader.Controller
                     staffAssignmentList = new StaffContactData
                     {
                         Id = StaffContactNode.SelectSingleNode("StaffUniqueId").InnerText ?? null,
-                        telephoneNumber = StaffContactNode.SelectSingleNode("Phone").InnerText ?? null,
-                        telephoneNumberType = StaffContactNode.SelectSingleNode("Type").InnerText ?? null,
-                        ext = StaffContactNode.SelectSingleNode("Ext").InnerText ?? null,
-                        orderOfPriority = StaffContactNode.SelectSingleNode("Preferred").InnerText ?? null,
-                        textMessageCapabilityIndicator = true
+                        TelephoneNumber = StaffContactNode.SelectSingleNode("Phone").InnerText ?? null,
+                        TelephoneNumberTypeDescriptor = StaffContactNode.SelectSingleNode("Type").InnerText ?? null,
+                        Ext = StaffContactNode.SelectSingleNode("Ext").InnerText ?? null,
+                        OrderOfPriority = StaffContactNode.SelectSingleNode("Preferred").InnerText ?? null,
+                        TextMessageCapabilityIndicator = true
                     };
 
                 }
@@ -440,7 +440,7 @@ namespace BPS.EdOrg.Loader.Controller
             {
                 IRestResponse response = null;
 
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + url +  Constants.educationOrganizationId + schoolId + Constants.staffUniqueId + staffUniqueId + Constants.employmentStatusDescriptor + empDesc);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + url +  Constants.educationOrganizationId + schoolId + Constants.staffUniqueId + staffUniqueId + Constants.employmentStatusDescriptor + Uri.EscapeDataString(Constants.employmentStatusDescriptorValue)+ empDesc);
                 response = _edfiApi.GetData(client, token);
                 if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
                 {
@@ -503,7 +503,7 @@ namespace BPS.EdOrg.Loader.Controller
                 }
                 else
                 {
-                    StaffAssociationReference data = JsonConvert.DeserializeObject<StaffAssociationReference>(response.Content);                                      
+                    StaffAssociationReference data = JsonConvert.DeserializeObject<StaffAssociationReference>(response.Content.TrimStart(new char[] { '[' }).TrimEnd(new char[] { ']' }));                                      
                     var id = data.id;
                     response = _edfiApi.PutData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffUrl + "/" + id), token);
                   
@@ -527,11 +527,11 @@ namespace BPS.EdOrg.Loader.Controller
                 IRestResponse response = null;
                 var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffUrl + Constants.staffUniqueId1 + staffUniqueId);
                 response = _edfiApi.GetData(client, token);
-                StaffDescriptor data = JsonConvert.DeserializeObject<StaffDescriptor>(response.Content);
+                StaffDescriptor data = JsonConvert.DeserializeObject<StaffDescriptor>(response.Content.TrimStart(new char[] { '[' }).TrimEnd(new char[] { ']' }));
 
                 if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
                 {
-                    if(staffData!= null && (!staffData.Any()))
+                    if(response.Content.Length > 2)
                     {
                         StaffReference rootObject = new StaffReference
                         {
@@ -568,14 +568,14 @@ namespace BPS.EdOrg.Loader.Controller
         {
             IRestResponse response = null;
 
-            var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrl + Constants.educationOrganizationId + staffData.educationOrganizationIdValue + Constants.employmentStatusDescriptor + staffData.empDesc + Constants.hireDate + staffData.hireDateValue + Constants.staffUniqueId + staffData.staffUniqueIdValue);
+            var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrl + Constants.educationOrganizationId + staffData.educationOrganizationIdValue + Constants.employmentStatusDescriptor+ Uri.EscapeDataString(Constants.employmentStatusDescriptorValue) + staffData.empDesc + Constants.hireDate + staffData.hireDateValue + Constants.staffUniqueId + staffData.staffUniqueIdValue);
 
             response = _edfiApi.GetData(client, token);
             if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
             {
                 if (response.Content.Length > 2)
                 {
-                    dynamic original = JObject.Parse(response.Content.ToString());
+                    dynamic original = JsonConvert.DeserializeObject<StaffAssociationReference>(response.Content.TrimStart(new char[] { '[' }).TrimEnd(new char[] { ']' }));
                     var id = original.id;
                     if (id != null)
                         return id;
@@ -607,7 +607,7 @@ namespace BPS.EdOrg.Loader.Controller
                             Href = string.Empty
                         }
                     },
-                    employmentStatusDescriptor = staffData.empDesc,
+                    employmentStatusDescriptor = Constants.employmentStatusDescriptorValue+staffData.empDesc,
                     hireDate = staffData.hireDateValue,
                     endDate = staffData.endDateValue
                 };
@@ -629,7 +629,7 @@ namespace BPS.EdOrg.Loader.Controller
             IRestResponse response = null;
             try
             {
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.educationOrganizationId + educationOrganizationId + Constants.beginDate + staffData.BeginDateValue + Constants.staffClassificationDescriptorId + staffData.StaffClassification + Constants.staffUniqueId + staffData.StaffUniqueIdValue);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.educationOrganizationId + educationOrganizationId + Constants.beginDate + staffData.BeginDateValue + Constants.staffClassificationDescriptorId + Uri.EscapeDataString(Constants.staffClassificationDescriptorValue) + staffData.StaffClassification + Constants.staffUniqueId + staffData.StaffUniqueIdValue);
                 response = _edfiApi.GetData(client, token);
                 if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
                 {
@@ -669,7 +669,7 @@ namespace BPS.EdOrg.Loader.Controller
                             {
                                 educationOrganizationId = Constants.educationOrganizationIdValue,
                                 staffUniqueId = staffData.StaffUniqueIdValue,
-                                employmentStatusDescriptor = staffData.EmpDesc,
+                                employmentStatusDescriptor = Constants.employmentStatusDescriptorValue+staffData.EmpDesc,
                                 hireDate = staffData.HireDateValue,
                                 Link = new Link
                                 {
@@ -710,7 +710,7 @@ namespace BPS.EdOrg.Loader.Controller
             IRestResponse response = null;
             try
             {
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.educationOrganizationId + educationOrganizationId + Constants.beginDate + staffData.BeginDateValue + Constants.staffClassificationDescriptorId + staffData.StaffClassification + Constants.staffUniqueId + staffData.StaffUniqueIdValue);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.educationOrganizationId + educationOrganizationId + Constants.beginDate + staffData.BeginDateValue + Constants.staffClassificationDescriptorId + Uri.EscapeDataString(Constants.staffClassificationDescriptorValue) + staffData.StaffClassification + Constants.staffUniqueId + staffData.StaffUniqueIdValue);
                 response = _edfiApi.GetData(client, token);
                 if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
                 {
@@ -783,7 +783,7 @@ namespace BPS.EdOrg.Loader.Controller
                     {
                         educationOrganizationId = Constants.educationOrganizationIdValue,
                         staffUniqueId = staffData.StaffUniqueIdValue,
-                        employmentStatusDescriptor = staffData.EmpDesc,
+                        employmentStatusDescriptor = Constants.employmentStatusDescriptorValue+staffData.EmpDesc,
                         hireDate = staffData.HireDateValue,
                         Link = new Link
                         {
@@ -850,7 +850,7 @@ namespace BPS.EdOrg.Loader.Controller
                     {
                         educationOrganizationId = Constants.educationOrganizationIdValue,
                         staffUniqueId = assignmentData.StaffUniqueIdValue,
-                        employmentStatusDescriptor = assignmentData.EmpDesc,
+                        employmentStatusDescriptor = Constants.employmentStatusDescriptorValue+assignmentData.EmpDesc,
                         hireDate = assignmentData.HireDateValue,
                         Link = new Link
                         {
@@ -912,7 +912,7 @@ namespace BPS.EdOrg.Loader.Controller
                             Href = string.Empty
                         }
                     },
-                    employmentStatusDescriptor = staffData.empDesc,
+                    employmentStatusDescriptor = Constants.employmentStatusDescriptorValue+staffData.empDesc,
                     hireDate = staffData.hireDateValue,
                     endDate = staffData.endDateValue
                 };

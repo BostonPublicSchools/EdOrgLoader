@@ -314,24 +314,24 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
                         var staffContactData = new StaffContactData
                         {
                             Id = fields[empIdIndex]?.Trim(),                           
-                            telephoneNumber = fields[phoneIndex]?.Trim(),
-                            telephoneNumberType = fields[typeIndex]?.Trim(),
-                            ext = fields[extIndex]?.Trim(),
-                            orderOfPriority = fields[preferredIndex]?.Trim(),
-                            textMessageCapabilityIndicator = true
+                            TelephoneNumber = fields[phoneIndex]?.Trim(),
+                            TelephoneNumberTypeDescriptor = fields[typeIndex]?.Trim(),
+                            Ext = fields[extIndex]?.Trim(),
+                            OrderOfPriority = fields[preferredIndex]?.Trim(),
+                            TextMessageCapabilityIndicator = true
                         };
 
                        
-                        _log.Debug($"Creating node for {staffContactData.Id}-{staffContactData.telephoneNumber}-{staffContactData.telephoneNumberType}");
-                        if (!string.IsNullOrEmpty(staffContactData.telephoneNumberType))
+                        _log.Debug($"Creating node for {staffContactData.Id}-{staffContactData.TelephoneNumber}-{staffContactData.TelephoneNumberTypeDescriptor}");
+                        if (!string.IsNullOrEmpty(staffContactData.TelephoneNumberTypeDescriptor))
                         {
-                            var telPhoneType = Constants.GetTelephoneType(staffContactData.telephoneNumberType);
-                            staffContactData.telephoneNumberType = telPhoneType;
+                            var telPhoneType = Constants.GetTelephoneType(staffContactData.TelephoneNumberTypeDescriptor);
+                            staffContactData.TelephoneNumberTypeDescriptor = telPhoneType;
                         }
-                        if (!string.IsNullOrEmpty(staffContactData.telephoneNumberType))
+                        if (!string.IsNullOrEmpty(staffContactData.TelephoneNumberTypeDescriptor))
                         {
-                            var preNum = Constants.GetPreferredNumber(staffContactData.orderOfPriority);
-                            staffContactData.orderOfPriority = preNum;
+                            var preNum = Constants.GetPreferredNumber(staffContactData.OrderOfPriority);
+                            staffContactData.OrderOfPriority = preNum;
                         }
                         CreateNodeStaffContact(staffContactData, writer);
                         numberOfRecordsCreatedInXml++;
@@ -533,7 +533,7 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
         {
             try
             {
-                _log.Info($"CreateNode started for Staff:{staffData.Id} and Work:{staffData.telephoneNumber}");
+                _log.Info($"CreateNode started for Staff:{staffData.Id} and Work:{staffData.TelephoneNumber}");
                 writer.WriteStartElement("StaffEducationOrganizationAssociation");
                 writer.WriteStartElement("ContactDetails");
                 
@@ -542,31 +542,31 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
                 writer.WriteEndElement();
                 
                 writer.WriteStartElement("Phone");
-                writer.WriteString(staffData.telephoneNumber);
+                writer.WriteString(staffData.TelephoneNumber);
                 writer.WriteEndElement();
 
                 writer.WriteStartElement("Type");
-                writer.WriteString(staffData.telephoneNumberType);
+                writer.WriteString(@"uri://ed-fi.org/TelephoneNumberTypeDescriptor#" + staffData.TelephoneNumberTypeDescriptor);
                 writer.WriteEndElement();
 
                 writer.WriteStartElement("Ext");
-                writer.WriteString(staffData.ext);
+                writer.WriteString(staffData.Ext);
                 writer.WriteEndElement();
 
                 writer.WriteStartElement("Preferred");
-                writer.WriteString(staffData.orderOfPriority);
+                writer.WriteString(staffData.OrderOfPriority);
                 writer.WriteEndElement();
 
                 writer.WriteEndElement();
 
                 writer.WriteEndElement();
 
-                _log.Info($"CreateNode Ended successfully for Contact:{staffData.Id} and Phone:{staffData.telephoneNumber}");
+                _log.Info($"CreateNode Ended successfully for Contact:{staffData.Id} and Phone:{staffData.TelephoneNumber}");
 
             }
             catch (Exception ex)
             {
-                _log.Error($"There is exception while creating Node for Contact:{staffData.Id} and Phone:{staffData.telephoneNumber}, Exception  :{ex.Message}");
+                _log.Error($"There is exception while creating Node for Contact:{staffData.Id} and Phone:{staffData.TelephoneNumber}, Exception  :{ex.Message}");
             }
         }
 
