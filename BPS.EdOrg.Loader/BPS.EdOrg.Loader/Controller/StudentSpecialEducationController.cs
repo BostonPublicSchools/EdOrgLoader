@@ -43,7 +43,7 @@ namespace BPS.EdOrg.Loader.Controller
 
                     var studentSpecialEducationList = GetAlertXml(node);                    
                     
-                    if (studentSpecialEducationList.EducationOrganizationId != null && studentSpecialEducationList.Name != null && studentSpecialEducationList.Type != null)
+                    if (!string.IsNullOrEmpty(studentSpecialEducationList.EducationOrganizationId) && !string.IsNullOrEmpty(studentSpecialEducationList.Name) && !string.IsNullOrEmpty(studentSpecialEducationList.Type))
                     {
                         // Check if the Program already exists in the ODS if not first enter the Progam.
                         VerifyProgramData(token, studentSpecialEducationList.EducationOrganizationId, studentSpecialEducationList.Name, studentSpecialEducationList.Type);
