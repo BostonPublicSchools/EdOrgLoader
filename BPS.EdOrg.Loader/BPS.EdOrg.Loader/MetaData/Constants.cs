@@ -31,7 +31,6 @@ namespace BPS.EdOrg.Loader
         public static string programAssignmentDescriptorValue = Uri.EscapeDataString(@"uri://ed-fi.org/ProgramAssignmentDescriptor#");
         public static string programAssignmentDescriptor = @"?programAssignmentDescriptor ="+programAssignmentDescriptorValue+"Regular Education ";
         public static string schoolId = @"&schoolId=";
-
         public static string programName = @"&programName=";
         public static string programType = @"&programTypeDescriptor=";
         public static string programTypeValue = @"uri://ed-fi.org/programTypeDescriptor#";

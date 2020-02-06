@@ -142,6 +142,32 @@ namespace BPS.EdOrg.Loader
         {
             Log.Info(e.Data);
         }
+
+
+        /// <summary>
+        /// Pcg generatd 504 Alert file is extracted  
+        /// and loaded  in the ODS in StudentspecialEducation
+        /// </summary>
+        /// <returns></returns>
+        private static void RunAlertIEPFile(CommandLineParser param)
+        {
+
+            //For 504xml.xml            
+            var token = edfiApi.GetAuthToken();
+            if (token != null)
+            {
+                studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
+                //studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
+            }
+            else Log.Error("Token is not generated, ODS not updated");
+
+        }
+
+        /// <summary>
+        /// Department file is generated in the output folder 
+        /// and Data is inserted in the ODS
+        /// </summary>
+        /// <returns></returns>
         private static void RunDeptFile(CommandLineParser param)
         {
 
@@ -151,6 +177,12 @@ namespace BPS.EdOrg.Loader
             LoadXml(param.Object);
 
         }
+
+        /// <summary>
+        /// Data is extracted from the PeopleSoft file that is daily generated  
+        /// and Data is inserted in the ODS for Staff Association 
+        /// </summary>
+        /// <returns></returns>
         private static void RunJobCodeFile(CommandLineParser param)
         {
 
@@ -170,13 +202,18 @@ namespace BPS.EdOrg.Loader
             else Log.Error("Token is not generated, ODS not updated");
 
         }
+
+        /// <summary>
+        /// Data is extracted from the PeopleSoft file 'BPSTBL_PHONE_ALL'
+        /// and Data is inserted/updated in the ODS for Staff Telephone 
+        /// </summary>
+        /// <returns></returns>
         private static void RunStaffContactFile(CommandLineParser param)
         {
             try
             {
                 ParseXmls parseXmls = new ParseXmls(param.Object, Log);
                 parseXmls.CreateXmlStaffContact();
-
                 var token = edfiApi.GetAuthToken();
                 if (token != null)
                 {
@@ -191,9 +228,13 @@ namespace BPS.EdOrg.Loader
                 notification = new Notification(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
                 notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
             }
-
-
         }
+
+        /// <summary>
+        /// Data is extracted from the PeopleSoft file 'BPS_EMP_TRANSFERS'
+        /// and Data is updated in the ODS for StaffAssociation 
+        /// </summary>
+        /// <returns></returns>
         private static void RunTransferCasesFile(CommandLineParser param)
         {
             try
@@ -215,31 +256,21 @@ namespace BPS.EdOrg.Loader
                 notification = new Notification(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
                 notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
             }
-            
-
-        }
-        private static void RunAlertIEPFile(CommandLineParser param)
-        {
-
-            //For 504xml.xml            
-            var token = edfiApi.GetAuthToken();
-            if (token != null)
-            {
-                studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
-                //studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
-            }
-            else Log.Error("Token is not generated, ODS not updated");
-
         }
 
+        /// <summary>
+        /// Gets the success code for the client response 
+        /// </summary>
+        /// <returns></returns>
         private static bool IsSuccessStatusCode(int statusCode)
         {
             return ((int)statusCode >= 200) && ((int)statusCode <= 204);
         }
-                       
 
-        
-                
+        /// <summary>
+        /// Error logging : To log the error in log file  
+        /// </summary>
+        /// <returns></returns>
         private static void ErrorLogging(ErrorLog errorLog)
         {
             string strPath = Constants.LOG_FILE;
