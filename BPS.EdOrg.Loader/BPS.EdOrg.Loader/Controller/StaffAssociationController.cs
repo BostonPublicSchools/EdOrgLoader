@@ -44,7 +44,7 @@ namespace BPS.EdOrg.Loader.Controller
                 XmlDocument xmlDoc = _prseXML.LoadXml("StaffAssociation");
                 _restServiceManager = new RestServiceManager(configuration, token, _log);
 
-                var existingStaffIds = _restServiceManager.GetStaffList();
+                //var existingStaffIds = _restServiceManager.GetStaffList();
                 var schoolDeptids = GetDeptList(configuration);
                 var nodeList = xmlDoc.SelectNodes(@"//InterchangeStaffAssociation/StaffEducationOrganizationAssociation").Cast<XmlNode>().OrderBy(element => element.SelectSingleNode("EmploymentPeriod/EndDate").InnerText).ToList();
                 foreach (XmlNode node in nodeList)
@@ -54,11 +54,11 @@ namespace BPS.EdOrg.Loader.Controller
                     if (staffEmploymentNodeList != null)
                     {
                         // Adding new staff from peoplesoft file.
-                        if (!string.IsNullOrEmpty(staffEmploymentNodeList.staffUniqueIdValue) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.firstName) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.lastName) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.birthDate))
-                        {
-                            if (!existingStaffIds.Any(p => p == staffEmploymentNodeList.staffUniqueIdValue))
-                                UpdatingNewStaffData(token, staffEmploymentNodeList.staffUniqueIdValue, staffEmploymentNodeList.staff.firstName, staffEmploymentNodeList.staff.middleName, staffEmploymentNodeList.staff.lastName, staffEmploymentNodeList.staff.birthDate);
-                        }
+                        //if (!string.IsNullOrEmpty(staffEmploymentNodeList.staffUniqueIdValue) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.firstName) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.lastName) && !string.IsNullOrEmpty(staffEmploymentNodeList.staff.birthDate))
+                        //{
+                        //    if (!existingStaffIds.Any(p => p == staffEmploymentNodeList.staffUniqueIdValue))
+                        //        UpdatingNewStaffData(token, staffEmploymentNodeList.staffUniqueIdValue, staffEmploymentNodeList.staff.firstName, staffEmploymentNodeList.staff.middleName, staffEmploymentNodeList.staff.lastName, staffEmploymentNodeList.staff.birthDate);
+                        //}
 
                         // if status is terminated and there are more than one row then set endDate as null
                         if (staffEmploymentNodeList.status == "T")
@@ -72,7 +72,14 @@ namespace BPS.EdOrg.Loader.Controller
                         if (educationOrganizationId == null)
                         {
                             staffEmploymentNodeList.educationOrganizationIdValue = Constants.educationOrganizationIdValueCentralStaff;
-                            GetEmploymentAssociationId(token, staffEmploymentNodeList);
+                            string id = GetEmploymentAssociationId(token, staffEmploymentNodeList);
+                            {
+                                string endDate = GetAssignmentEndDate(token, staffEmploymentNodeList.staffUniqueIdValue, staffEmploymentNodeList.empDesc, null, Constants.StaffAssignmentUrl);
+                                //Setting the Enddate with the one from AssignmentAssociation
+                                if (endDate != null)
+                                    staffEmploymentNodeList.endDateValue = endDate;
+                                UpdateEndDate(token, id, staffEmploymentNodeList);
+                            }
                             UpdateStaffSchoolAssociation(token, Constants.educationOrganizationIdValueCentralStaff, staffEmploymentNodeList.empDesc, staffEmploymentNodeList.staffUniqueIdValue, Constants.StaffEmploymentUrl);
                         }
 
