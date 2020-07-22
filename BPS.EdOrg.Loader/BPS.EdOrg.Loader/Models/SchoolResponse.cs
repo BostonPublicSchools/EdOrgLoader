@@ -6,13 +6,14 @@ namespace BPS.EdOrg.Loader.Models
     {
         public List<EducationOrganizationIdentificationSystem> IdentificationCodes { get; set; }
         public string schoolId { get; set; }
-        public string operationalStatusType { get; set; }
-        
+        public string OperationalStatusDescriptor { get; set; }
+
     }
 
     public class EducationOrganizationIdentificationSystem
     {
         public string EducationOrganizationIdentificationSystemDescriptor { get; set; }
+
         public string IdentificationCode { get; set; }
     }
 
