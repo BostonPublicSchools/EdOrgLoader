@@ -124,9 +124,9 @@ namespace BPS.EdOrg.Loader.Models
 
     public class ProgramReference
     {
-        public string educationOrganizationId { get; set; }
-        public string type { get; set; }
-        public string name { get; set; }
+        public string EducationOrganizationId { get; set; }
+        public string ProgramTypeDescriptor { get; set; }
+        public string ProgramName { get; set; }
         public Link Link { get; set; }
     }
     public class EdFiStaffReference
@@ -201,11 +201,11 @@ namespace BPS.EdOrg.Loader.Models
     public class StaffContactData
     {
         public string Id { get; set; }
-        public string telephoneNumber { get; set; }
-        public string telephoneNumberType { get; set; }
-        public string ext { get; set; }
-        public bool textMessageCapabilityIndicator { get; set; }
-        public string orderOfPriority { get; set; }
+        public string TelephoneNumber { get; set; }
+        public string TelephoneNumberTypeDescriptor { get; set; }
+        public string Ext { get; set; }
+        public bool TextMessageCapabilityIndicator { get; set; }
+        public string OrderOfPriority { get; set; }
 
     }
     public class StaffElectronicMailsData
@@ -276,7 +276,13 @@ namespace BPS.EdOrg.Loader.Models
     {
         public string id { get; set; }
     }
-   
 
+    public class StaffReference
+    {
+        public string StaffUniqueId { get; set; }
+        public string FirstName { get; set; }
+        public string LastSurname { get; set; }
+        public List<StaffContactData> telephones { get; set; }
+    }
 }
 
