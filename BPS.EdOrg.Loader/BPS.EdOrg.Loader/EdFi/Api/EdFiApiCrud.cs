@@ -1,6 +1,7 @@
 ﻿using System.Configuration;
 using BPS.EdOrg.Loader.ApiClient;
 using RestSharp;
+using RestSharp.Authenticators;
 
 namespace BPS.EdOrg.Loader.EdFi.Api
 {
@@ -47,11 +48,14 @@ namespace BPS.EdOrg.Loader.EdFi.Api
         /// <returns></returns>
         public IRestResponse GetData(RestClient client, string token)
         {
+
             var request = new RestRequest(Method.GET);
-            request.AddHeader("Authorization", "Bearer  " + token);
-            request.AddParameter("application/json; charset=utf-8", ParameterType.RequestBody);
+            client.Authenticator = new HttpBasicAuthenticator("UserA", "123");
+            request.AddParameter("Authorization", string.Format("Bearer " + token), ParameterType.HttpHeader);
+            request.AddHeader("Accept", "application/json");
             request.RequestFormat = DataFormat.Json;
             return client.Execute(request);
+
         }
     }
 }
