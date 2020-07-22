@@ -75,8 +75,10 @@ namespace BPS.EdOrg.Loader.ApiClient
             var bearerTokenRequest = new RestRequest("oauth/token", Method.POST);
             bearerTokenRequest.AddParameter("Client_id", clientKey);
             bearerTokenRequest.AddParameter("Client_secret", clientSecret);
-            bearerTokenRequest.AddParameter("Code", accessCode);
-            bearerTokenRequest.AddParameter("Grant_type", "authorization_code");
+            bearerTokenRequest.AddParameter("Grant_type", "client_credentials");
+            // version 2.5
+            //bearerTokenRequest.AddParameter("Code", accessCode);
+            //bearerTokenRequest.AddParameter("Grant_type", "authorization_code");
 
             var bearerTokenResponse = oauthClient.Execute<BearerTokenResponse>(bearerTokenRequest);
             if (bearerTokenResponse.StatusCode != HttpStatusCode.OK)
