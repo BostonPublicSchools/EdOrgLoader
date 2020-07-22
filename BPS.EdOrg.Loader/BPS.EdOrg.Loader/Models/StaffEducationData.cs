@@ -81,9 +81,9 @@ namespace BPS.EdOrg.Loader.Models
     {
         public EdFiEducationReference EducationOrganizationReference { get; set; }
         public int? ProgramId { get; set; }
-        public string Type { get; set; }
+        public string ProgramTypeDescriptor { get; set; }
         public string SponsorType { get; set; }
-        public string Name { get; set; }
+        public string ProgramName { get; set; }
         public string ProgramEducationOrganizationId { get; set; }
 
     }
