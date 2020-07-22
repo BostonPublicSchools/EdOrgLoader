@@ -54,7 +54,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                                 if (!string.IsNullOrEmpty(deptId) && !string.Equals(deptId, "N/A", StringComparison.OrdinalIgnoreCase))
                                 {
                                     existingDeptIds.Add(deptId);
-                                    schoolDepts.Add(new SchoolDept { SchoolId = school.schoolId, DeptId = deptId, OperationalStatus = school.operationalStatusType });
+                                    schoolDepts.Add(new SchoolDept { SchoolId = school.schoolId, DeptId = deptId, OperationalStatus = school.OperationalStatusDescriptor.Split('#').Last() });
                                 }
                             }
                         }
