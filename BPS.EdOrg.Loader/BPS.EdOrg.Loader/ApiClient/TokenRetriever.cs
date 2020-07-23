@@ -44,7 +44,7 @@ namespace BPS.EdOrg.Loader.ApiClient
         public string ObtainNewBearerToken()
         {
             var oauthClient = new RestClient(oauthUrl);
-            var accessCode = GetAccessCode(oauthClient);
+            //var accessCode = GetAccessCode(oauthClient);
             return GetBearerToken(oauthClient);
         }
 
