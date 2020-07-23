@@ -381,11 +381,11 @@ namespace BPS.EdOrg.Loader.Controller
                     staffAssignmentList = new StaffContactData
                     {
                         Id = StaffContactNode.SelectSingleNode("StaffUniqueId").InnerText ?? null,
-                        telephoneNumber = StaffContactNode.SelectSingleNode("Phone").InnerText ?? null,
-                        telephoneNumberType = StaffContactNode.SelectSingleNode("Type").InnerText ?? null,
-                        ext = StaffContactNode.SelectSingleNode("Ext").InnerText ?? null,
-                        orderOfPriority = StaffContactNode.SelectSingleNode("Preferred").InnerText ?? null,
-                        textMessageCapabilityIndicator = true
+                        TelephoneNumber = StaffContactNode.SelectSingleNode("Phone").InnerText ?? null,
+                        TelephoneNumberTypeDescriptor = StaffContactNode.SelectSingleNode("Type").InnerText ?? null,
+                        Ext = StaffContactNode.SelectSingleNode("Ext").InnerText ?? null,
+                        OrderOfPriority = StaffContactNode.SelectSingleNode("Preferred").InnerText ?? null,
+                        TextMessageCapabilityIndicator = true
                     };
 
                 }
