@@ -634,7 +634,7 @@ namespace BPS.EdOrg.Loader.Controller
                             parentResponse = spList.parentResponse,
                             costSharingAgency = spList.costSharingAgency,
                             isCostSharing = spList.isCostSharing,
-                            dataSource = spList.dataSource,
+                            //dataSource = spList.dataSource,
                         }
                     }
 
@@ -815,10 +815,11 @@ namespace BPS.EdOrg.Loader.Controller
                         var data = JsonConvert.DeserializeObject <List<EdFiStudentSpecialEducation>>(response.Content);
                         foreach (var item in data)
                         {
-                            string dataSource = null;
+                            //string dataSource = null;
                             var id = item.id;
-                            if(item._ext!= null)dataSource = item._ext.myBPS.dataSource;                             
-                            rootObject._ext.myBPS.dataSource= Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
+                            //if(item._ext!= null)
+                            //    dataSource = item._ext.myBPS.dataSource;                             
+                            //rootObject._ext.myBPS.dataSource= Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
                             string stuId = item.studentReference.studentUniqueId;
                             DateTime iepDate = Convert.ToDateTime(item.beginDate);
                             if (id != null)
@@ -1192,10 +1193,10 @@ namespace BPS.EdOrg.Loader.Controller
 
                     }
                 }
-                string dataSource = null;
-                if (node.SelectSingleNode("DataSource")!= null)
-                    dataSource = node.SelectSingleNode("DataSource").InnerText.ToString();
-                spEducation.dataSource = Constants.GetDataSource(dataSource);
+                //string dataSource = null;
+                //if (node.SelectSingleNode("DataSource")!= null)
+                //    dataSource = node.SelectSingleNode("DataSource").InnerText.ToString();
+                //spEducation.dataSource = Constants.GetDataSource(dataSource);
 
                 spEducation.medicallyFragile = null;
                 spEducation.multiplyDisabled = null;

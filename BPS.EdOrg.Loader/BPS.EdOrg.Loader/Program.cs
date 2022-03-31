@@ -280,7 +280,7 @@ namespace BPS.EdOrg.Loader
         private static void RunAlertIEPFile(CommandLineParser param)
         {
             ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            parseXmls.CreateXmlEdPlanToAspenTxt();
+            //parseXmls.CreateXmlEdPlanToAspenTxt();
             var token = edfiApi.GetAuthToken();
             if (token != null)
             {
