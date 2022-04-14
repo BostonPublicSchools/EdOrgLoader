@@ -101,7 +101,13 @@ namespace BPS.EdOrg.Loader.Controller
                         if (!String.IsNullOrEmpty(endDate))
                             item.EndDate = endDate.Split()[0];
                         SetEndDate(specialEdPlan, token, item);
-                        
+                        //offset 16100 has some issue skipping the offset and loading again
+                        if (studentSpecialEducations == null)
+                        {
+                            offset = offset + 100;
+                            studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
+                        }
+
                     }
                     offset = offset + 100;
                     studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
@@ -229,7 +235,7 @@ namespace BPS.EdOrg.Loader.Controller
                             // Check if the Program already exists in the ODS if not first enter the Progam.
                             VerifyProgramData(token, spEducation.programEducationOrganizationId, spEducation.programName, spEducation.programTypeDescriptorId);
 
-                            if (!string.IsNullOrEmpty(spEducation.beginDate))                                                          
+                            if (!string.IsNullOrEmpty(spEducation.beginDate) && !string.IsNullOrEmpty(spEducation.iepBeginDate) && !string.IsNullOrEmpty(spEducation.iepEndDate))
                                 InsertIEPStudentSpecialEducation(token, spEducation);
                            
                             if(!string.IsNullOrEmpty(spEducation.iepExitDate))
