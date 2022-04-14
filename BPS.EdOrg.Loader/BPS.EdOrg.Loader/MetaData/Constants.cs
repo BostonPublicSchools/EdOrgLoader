@@ -10,8 +10,8 @@ namespace BPS.EdOrg.Loader
     class Constants
     {
         public static string JobFile = @"R0100156_JOB_W_ORIGHIRDT.txt";
-        public static string JobEdPlanTxtFile = @"EdPlanToAspen"+ DateTime.Now.ToString("_MMddyyyy_")+".txt";
-        public static string JobEdPlanXmlFile = @"EdPlanToAspen"+DateTime.Now.ToString("_MMddyyyy_")+".txt";
+        public static string JobEdPlanTxtFile = @"EdPlanToAspen.txt";
+        public static string JobEdPlanXmlFile = @"R137!maboston!0-26-19-079949!4-5-22.xml";
         public static string educationOrganizationId = @"?educationOrganizationId=";
         public static string SpecEduEducationOrganizationId = @"&educationOrganizationId=";
         public static string educationServiceCenterId = @"?educationServiceCenterId=";

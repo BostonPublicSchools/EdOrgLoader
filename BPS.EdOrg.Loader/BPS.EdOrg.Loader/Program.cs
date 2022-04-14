@@ -51,12 +51,12 @@ namespace BPS.EdOrg.Loader
                     LogConfiguration(param.Object);
 
                     // creating the xml and executing the file through command line parser                    
-                    RunDeptFile(param);
-                    RunStaffEmail(param);
-                    RunJobCodeFile(param);
-                    RunStaffAddressFile(param);
-                    RunStaffContactFile(param);
-                    RunTransferCasesFile(param);
+                    //RunDeptFile(param);                    
+                    //RunJobCodeFile(param);
+                    //RunStaffEmail(param);
+                    //RunStaffAddressFile(param);
+                    //RunStaffContactFile(param);
+                    //RunTransferCasesFile(param);
                     RunAlertIEPFile(param);
                 }
                 catch (Exception ex)
@@ -280,13 +280,13 @@ namespace BPS.EdOrg.Loader
         private static void RunAlertIEPFile(CommandLineParser param)
         {
             ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            //parseXmls.CreateXmlEdPlanToAspenTxt();
+            parseXmls.CreateXmlEdPlanToAspenTxt();
             var token = edfiApi.GetAuthToken();
             if (token != null)
             {
                 StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);                
-                studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
+                //studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);                
+                //studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
                 studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
                 studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
 
