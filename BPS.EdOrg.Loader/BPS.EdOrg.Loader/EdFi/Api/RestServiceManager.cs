@@ -30,7 +30,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
             {
                 if (!string.IsNullOrEmpty(_accessToken))
                 {
-                    var httpClient = new RestClient(_configuration.CrossWalkSchoolApiUrl);
+                    var httpClient = new RestClient(_configuration.CrossWalkSchoolApiUrl);                    
                     int offset = 0, limit = 100;
                     bool hasRecords = true;
                     while (hasRecords)
@@ -78,6 +78,62 @@ namespace BPS.EdOrg.Loader.EdFi.Api
             return schoolDepts;
         }
 
+
+        public List<SchoolDept> GetDeptsList()
+        {
+            List<string> existingDeptIds = new List<string>();
+            List<SchoolDept> schoolDepts = new List<SchoolDept>();
+            try
+            {
+                if (!string.IsNullOrEmpty(_accessToken))
+                {
+                    var httpClient = new RestClient(_configuration.CrossWalkEdServicecenterApiUrl);
+                    int offset = 0, limit = 100;
+                    bool hasRecords = true;
+                    while (hasRecords)
+                    {
+                        var response = GetRestResponse(httpClient, offset, limit);
+                        offset += limit;
+                        if (response.StatusCode != HttpStatusCode.OK)
+                        {
+                            _log.Error($"Unable to retrieve school list from {httpClient.BaseUrl}");
+                        }
+                        else
+                        {
+                            List<SchoolResponse> DeptList = response.Data;
+                            foreach (var Dept in DeptList)
+                            {
+                                string deptId = Dept.IdentificationCodes?
+                                    .Where(x => string.Equals(x.EducationOrganizationIdentificationSystemDescriptor, "uri://ed-fi.org/EducationOrganizationIdentificationSystemDescriptor#School", StringComparison.OrdinalIgnoreCase))
+                                    .FirstOrDefault()?.IdentificationCode;
+                                if (deptId == null || deptId.Equals("N/A"))
+                                    deptId = Dept.schoolId;
+                                if (!string.IsNullOrEmpty(deptId) && !string.Equals(deptId, "N/A", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    existingDeptIds.Add(deptId);
+                                    schoolDepts.Add(new SchoolDept { SchoolId = deptId, DeptId = deptId, OperationalStatus = Dept.operationalStatusDescriptor });
+                                }
+                            }
+                        }
+
+                        if (response.Data.Count == 0)
+                        {
+                            hasRecords = false;
+                        }
+                    }
+
+                }
+                else
+                {
+                    _log.Error($"Bearer token not provided for retrieving school list from API");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Exception while retrieve school list : {ex.Message}");
+            }
+            return schoolDepts;
+        }
 
         public List<string> GetStaffList()
         {

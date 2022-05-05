@@ -21,6 +21,10 @@ namespace BPS.EdOrg.Loader.MetaData
                 .WithDescription("The Crosswalk web API url (i.e. http://server/api/v1.0)")
                 .SetDefault(ConfigurationManager.AppSettings["CrossWalkSchoolApiUrl"]);
 
+            Setup(arg => arg.CrossWalkEdServicecenterApiUrl).As('4', "CrossWalkEdServicecenterApiUrl")
+                .WithDescription("The Crosswalk web API url (i.e. http://server/api/v1.0)")
+                .SetDefault(ConfigurationManager.AppSettings["CrossWalkEdServicecenterApiUrl"]);
+
             Setup(arg => arg.CrossWalkStaffApiUrl).As('n', "crosswalkStaffApiUrl")
                 .WithDescription("The Crosswalk web API url (i.e. http://server/api/v1.0)")
                 .SetDefault(ConfigurationManager.AppSettings["CrossWalkStaffApiUrl"]);

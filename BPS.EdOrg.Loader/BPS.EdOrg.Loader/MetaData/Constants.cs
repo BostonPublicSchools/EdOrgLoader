@@ -44,7 +44,7 @@ namespace BPS.EdOrg.Loader
 
 
         public static string StaffIdentificationSystemDescriptor = "uri://ed-fi.org/StaffIdentificationSystemDescriptor#State";
-        public static string ProgramAssignmentDescriptor = @"?programAssignmentDescriptor =" + Uri.EscapeDataString("uri://ed-fi.org/ProgramAssignmentDescriptor#Regular Education ");
+        public static string ProgramAssignmentDescriptor = @"?programAssignmentDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramAssignmentDescriptor#Regular Education");
         public static string EmploymentStatusDescriptor = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://mybps.org/EmploymentStatusDescriptor#");
         public static string EmploymentStatusDescriptorOther = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/EmploymentStatusDescriptor#");
         public static string StaffClassificationDescriptor1 = @"& StaffClassificationDescriptor = " +Uri.EscapeDataString("uri://ed-fi.org/StaffClassificationDescriptor#");
@@ -95,6 +95,16 @@ namespace BPS.EdOrg.Loader
                 return "In Xml";
             else
                 return "In Txt";
+        }
+
+
+        //GetSchoolID based on EducationOrgID
+        public static string GetSchooId( string schoolId)
+        {
+            if (schoolId.Length >= 6)
+                schoolId = Constants.educationOrganizationIdValueCentralStaff;
+            
+            return schoolId;
         }
 
         // Get the Data Source from ODS and verify if tit exists in Both Xml and Txt

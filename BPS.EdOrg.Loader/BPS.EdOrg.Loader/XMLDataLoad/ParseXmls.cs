@@ -213,7 +213,7 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
                 string[] DataFilePathStaffAddressB = File.ReadAllLines(_configuration.DataFilePathStaffAddressB).Skip(1).ToArray();
 
                 DataStaffAB.AddRange(DataFilePathStaffAddressA.ToList());
-                DataStaffAB.AddRange(DataFilePathStaffAddressB.ToList());               
+                DataStaffAB.AddRange(DataFilePathStaffAddressB.ToList());
 
                 List<StaffAddressData> staffAddressData = GetStaffAddressDataEmployee(DataFilePathStaffAddressEmployees, writer);
                 List<StaffAddressData> staffAddressDataAB = GetStaffAddressDataEmployeeAB(DataStaffAB, writer);

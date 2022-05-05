@@ -11,6 +11,7 @@ namespace BPS.EdOrg.Loader.MetaData
     {
         public string CrossWalkOAuthUrl { get; set; }        
         public string CrossWalkSchoolApiUrl { get; set; }
+        public string CrossWalkEdServicecenterApiUrl { get; set; }
         public string CrossWalkStaffApiUrl { get; set; }
         public string CrossWalkKey { get; set; }
         public string CrossWalkSecret { get; set; }
@@ -71,6 +72,7 @@ namespace BPS.EdOrg.Loader.MetaData
                         string.IsNullOrEmpty(OauthUrl) ||
                         string.IsNullOrEmpty(CrossWalkOAuthUrl) ||
                         string.IsNullOrEmpty(CrossWalkSchoolApiUrl) ||
+                        string.IsNullOrEmpty(CrossWalkEdServicecenterApiUrl) ||
                         string.IsNullOrEmpty(CrossWalkStaffApiUrl) ||
                         string.IsNullOrEmpty(CrossWalkKey) ||
                         string.IsNullOrEmpty(CrossWalkSecret)
@@ -104,6 +106,9 @@ namespace BPS.EdOrg.Loader.MetaData
 
                 if (string.IsNullOrEmpty(CrossWalkSchoolApiUrl) || !Uri.IsWellFormedUriString(CrossWalkSchoolApiUrl, UriKind.Absolute))
                     sb.AppendLine("Option 'p:corsswalkapiurl' parse error. Provided value is not a url.");
+
+                if (string.IsNullOrEmpty(CrossWalkEdServicecenterApiUrl) || !Uri.IsWellFormedUriString(CrossWalkEdServicecenterApiUrl, UriKind.Absolute))
+                    sb.AppendLine("Option '4:CrossWalkEdServicecenterApiUrl' parse error. Provided value is not a url.");
 
                 if (string.IsNullOrEmpty(CrossWalkStaffApiUrl) || !Uri.IsWellFormedUriString(CrossWalkStaffApiUrl, UriKind.Absolute))
                     sb.AppendLine("Option 'p:corsswalkapiurl' parse error. Provided value is not a url.");
