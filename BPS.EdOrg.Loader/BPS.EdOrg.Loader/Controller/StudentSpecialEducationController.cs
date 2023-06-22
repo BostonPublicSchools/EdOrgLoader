@@ -101,7 +101,13 @@ namespace BPS.EdOrg.Loader.Controller
                         if (!String.IsNullOrEmpty(endDate))
                             item.EndDate = endDate.Split()[0];
                         SetEndDate(specialEdPlan, token, item);
-                        
+                        //offset 16100 has some issue skipping the offset and loading again
+                        if (studentSpecialEducations == null)
+                        {
+                            offset = offset + 100;
+                            studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
+                        }
+
                     }
                     offset = offset + 100;
                     studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
@@ -670,7 +676,7 @@ namespace BPS.EdOrg.Loader.Controller
                             parentResponse = spList.parentResponse,
                             costSharingAgency = spList.costSharingAgency,
                             isCostSharing = spList.isCostSharing,
-                            dataSource = spList.dataSource,
+                            //dataSource = spList.dataSource,
                             sourceSystemId = spList.iepUniqueId,
                             levelOfNeedDescriptor = spList.levelofNeed
                         }
@@ -855,7 +861,6 @@ namespace BPS.EdOrg.Loader.Controller
                         foreach (var item in data)
                         {
                             string stuId = item.studentReference.studentUniqueId;
-                            string dataSource = null;
                             bool flag = false;
 
                             // Getting the DataSource as xml or txt for pcg records
@@ -1245,10 +1250,10 @@ namespace BPS.EdOrg.Loader.Controller
 
                     }
                 }
-                string dataSource = null;
-                if (node.SelectSingleNode("DataSource")!= null)
-                    dataSource = node.SelectSingleNode("DataSource").InnerText.ToString();
-                spEducation.dataSource = Constants.GetDataSource(dataSource);
+                //string dataSource = null;
+                //if (node.SelectSingleNode("DataSource")!= null)
+                //    dataSource = node.SelectSingleNode("DataSource").InnerText.ToString();
+                //spEducation.dataSource = Constants.GetDataSource(dataSource);
 
                 spEducation.medicallyFragile = false;
                 //spEducation.multiplyDisabled = false;
