@@ -57,6 +57,27 @@ namespace BPS.EdOrg.Loader.EdFi.Api
         }
 
         /// <summary>
+        /// Patch update the data from EdFi ODS
+        /// </summary>
+        /// <returns></returns>
+        public IRestResponse PatchUpdateData(string jsonData, RestClient client, string token)
+        {
+            if (token == null) token = GetAuthToken();
+            var request = new RestRequest(Method.PATCH);
+            request.AddHeader("Authorization", "Bearer  " + token);
+            request.AddParameter("application/json; charset=utf-8", jsonData, ParameterType.RequestBody);
+            request.RequestFormat = DataFormat.Json;
+            var response = client.Execute(request);
+            if ((int)response.StatusCode == 401)
+            {
+                token = GetAuthToken();
+                return PutData(jsonData, client, token);
+            }
+            return response;
+
+        }
+
+        /// <summary>
         /// Gets the Data from the ODS
         /// </summary>
         /// <returns></returns>
@@ -75,6 +96,27 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                 
             return response;
 
+
+        }
+
+        /// <summary>
+        /// Delete the data from EdFi ODS
+        /// </summary>
+        /// <returns></returns>
+        public IRestResponse DeleteData(RestClient client, string token)
+        {
+            if (token == null) token = GetAuthToken();
+            var request = new RestRequest(Method.DELETE);
+            request.AddHeader("Authorization", "Bearer  " + token);
+            request.AddParameter("application/json; charset=utf-8", ParameterType.RequestBody);
+            request.RequestFormat = DataFormat.Json;
+            var response = client.Execute(request);
+            if ((int)response.StatusCode == 401)
+            {
+                token = GetAuthToken();
+                return DeleteData(client, token);
+            }
+            return response;
 
         }
     }

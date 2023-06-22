@@ -69,6 +69,7 @@ namespace BPS.EdOrg.Loader.Models
         public SpecialEducation()
         { }
         public string EducationOrganizationId { get; set; }
+        public string ProgramEducationOrganizationId { get; set; }
         public string Type { get; set; }        
         public string Name { get; set; }
         public string StudentUniqueId { get; set; }        
@@ -105,6 +106,7 @@ namespace BPS.EdOrg.Loader.Models
     {
         public int StdId { get; set; }
         public string studentUniqueId { get; set; }
+        public string iepUniqueId { get; set; }
         public string educationOrganizationId { get; set; }
         public string programTypeDescriptorId { get; set; }
         public string programName { get; set; }
@@ -114,8 +116,8 @@ namespace BPS.EdOrg.Loader.Models
         public string specialEducationSettingDescriptorId { get; set; }
         public decimal? specialEducationHoursPerWeek { get; set; }
         public decimal? schoolHoursPerWeek { get; set; }
-        public int? multiplyDisabled { get; set; }
-        public int? medicallyFragile { get; set; }
+        public int multiplyDisabled { get; set; }
+        public bool medicallyFragile { get; set; }
         public string lastEvaluationDate { get; set; }
         public string iepReviewDate { get; set; }
         public string iepBeginDate { get; set; }
@@ -123,9 +125,29 @@ namespace BPS.EdOrg.Loader.Models
         public string iepExitDate { get; set; }
         public string costSharingAgency { get; set; }
         public string parentResponse { get; set; }
-        public string dataSource { get; set; }
+        //public string dataSource { get; set; }
         public bool isCostSharing { get; set; }
+        public string levelofNeed { get; set; }
+        public string disability { get; set; }
         public List<Service> relatedServices { get; set; }
+
+    }
+
+    public class SpedImportDisability
+    {
+        public int studentNumber { get; set; }
+        public int disabilityDesc { get; set; }
+        public int levelNeedDesc { get; set; }
+
+
+    }
+
+    public class SpedSimsTxt
+    {
+        public string studentNumber { get; set; }
+        public string disabilityInfo { get; set; }
+        public string levelNeedInfo { get; set; }
+
 
     }
     public class EdFiStudentSpecialEducation
@@ -135,14 +157,14 @@ namespace BPS.EdOrg.Loader.Models
         public EdFiEducationReference educationOrganizationReference { get; set; }
         public ProgramReference programReference { get; set; }
         public StudentReference studentReference { get; set; }
+        public List<Disabilities> disabilities { get; set; }
         public string endDate { get; set; }
         public object ideaEligibility { get; set; }
         public string lastEvaluationDate { get; set; }
         public string iepReviewDate { get; set; }
         public string iepBeginDate { get; set; }
         public string iepEndDate { get; set; }
-        public string iepExitDate { get; set; }
-        
+        public string iepExitDate { get; set; }        
         public object multiplyDisabled { get; set; }
         public object medicallyFragile { get; set; }
         public string reasonExitedDescriptor { get; set; }
@@ -150,13 +172,21 @@ namespace BPS.EdOrg.Loader.Models
         public object specialEducationSettingDescriptor { get; set; }
         public decimal? specialEducationHoursPerWeek { get; set; }
         public List<Service> specialEducationProgramServices { get; set; }
-
         public EdFiExt _ext { get; set; }
     }
+
+    
     public class StudentReference
     {
         public string studentUniqueId { get; set; }
         public Link Link { get; set; }
+    }
+
+
+    public class Disabilities {
+        public string disabilityDescriptor { get; set; }
+        public int orderOfDisability { get; set; }
+
     }
 
     public class EdFiExt
@@ -174,7 +204,9 @@ namespace BPS.EdOrg.Loader.Models
         public string costSharingAgency { get; set; }
         public bool isCostSharing { get; set; }
         public string parentResponse { get; set; }
-        public string dataSource { get; set; }
+        //public string dataSource { get; set; }
+        public string sourceSystemId { get; set; }
+        public string levelOfNeedDescriptor { get; set; }
     }
     public class ErrorLog
     {

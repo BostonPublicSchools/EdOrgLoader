@@ -92,8 +92,8 @@ namespace BPS.EdOrg.Loader.Models
         public string EndDate { get; set; }
         public string StaffClassificationDescriptor { get; set; }
         public string OrderOfAssignment { get; set; }
-        public string HireDate { get; set; }
-        public string EmpDescriptor { get; set; }
+        //public string HireDate { get; set; }
+        //public string EmpDescriptor { get; set; }
 
 
     }
@@ -167,6 +167,21 @@ namespace BPS.EdOrg.Loader.Models
         public string BccToAdr { get; set; }
         public List<Attachment> AttachmentList { get; set; }
     }
+    public class StaffEmploymentAssociationData
+    {
+
+        public StaffData staff { get; set; }
+        public string staffUniqueIdValue { get; set; }
+        public string positionCodeDescription { get; set; }
+        public string educationOrganizationIdValue { get; set; }
+        public string endDateValue { get; set; }
+        public string beginDateValue { get; set; }
+        public string hireDateValue { get; set; }
+        public string status { get; set; }
+        public string staffClassification { get; set; }
+        public string empDesc { get; set; }
+        public string department { get; set; }
+    }
 
     public class StaffAssignmentAssociationData
     {
@@ -227,7 +242,10 @@ namespace BPS.EdOrg.Loader.Models
         public string orderOfPriority { get; set; }
 
     }
-    
+
+   
+
+
     public class EdPlanToAspenTxt
     {
         public string studentNumber { get; set; }
@@ -244,6 +262,8 @@ namespace BPS.EdOrg.Loader.Models
         public string costShare { get; set; }
 
     }
+
+    
     public class StaffAddressData
     {
         public string Id { get; set; }        
@@ -273,21 +293,7 @@ namespace BPS.EdOrg.Loader.Models
     }
 
 
-    public class StaffEmploymentAssociationData
-    {
-
-        public StaffData staff { get; set; }
-        public string staffUniqueIdValue { get; set; }
-        public string positionCodeDescription { get; set; }
-        public string educationOrganizationIdValue { get; set; }
-        public string endDateValue { get; set; }
-        public string beginDateValue { get; set; }
-        public string hireDateValue { get; set; }
-        public string status { get; set; }
-        public string staffClassification { get; set; }
-        public string empDesc { get; set; }
-        public string department { get; set; }
-    }
+   
 
     public class StaffData
     {
@@ -334,7 +340,19 @@ namespace BPS.EdOrg.Loader.Models
     {
         public string id { get; set; }
     }
-   
+
+    public class SponsoredStaff
+    {
+        public string userName { get; set; }
+        public string firstName { get; set; }
+        public string lastName { get; set; }
+        public string startDate { get; set; }
+        public string endDate { get; set; }
+        public string department { get; set; }
+        public string positionTitle { get; set; }
+
+    }
+
 
 }
 

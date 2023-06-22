@@ -107,6 +107,12 @@ namespace BPS.EdOrg.Loader.MetaData
                 ConfigurationManager.AppSettings["DataFilePathEdPlantoApen"],
                 Directory.GetCurrentDirectory()));
 
+            Setup(arg => arg.DataFilePathSpedSims).As('5', "DataFilePathSpedSims")
+            .WithDescription("Path to folder containing the input text data files to be loaded")
+            .SetDefault(GetFirstValue(
+                ConfigurationManager.AppSettings["DataFilePathSpedSims"],
+                Directory.GetCurrentDirectory()));
+
             Setup(arg => arg.DataFilePathStaffEmail).As('f', "DataFilePathStaffEmail")
             .WithDescription("Path to folder containing the input text data files to be loaded")
             .SetDefault(GetFirstValue(

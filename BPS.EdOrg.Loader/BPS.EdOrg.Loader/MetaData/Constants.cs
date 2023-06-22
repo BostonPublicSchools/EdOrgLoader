@@ -35,19 +35,20 @@ namespace BPS.EdOrg.Loader
         public static string programEducationOrganizationId = @"&programEducationOrganizationId=";        
         public static string schoolId = @"&schoolId=";
         public static string schoolId1=  @"?schoolId=";
+        public static string sponsoredPositionTitle = @"#### - Sponsored Staff";
         public static string program504PlanValue = Uri.EscapeDataString(@"504 Plan");
         public static string program504Plan = @"&programName="+program504PlanValue;
         public static string programName504PlanValue = "504 Plan";
         public static string ProgramName = "Special Education";
         public static string specialEdProgramTypeDescriptor = @"&programTypeDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramTypeDescriptor#"+ ProgramName);
         public static string alertProgramTypeDescriptor = @"&programTypeDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramTypeDescriptor#" + "Section 504 Placement");
-
+        public static string SchoolYear = ConfigurationManager.AppSettings["SchoolYear"];
 
         public static string StaffIdentificationSystemDescriptor = "uri://ed-fi.org/StaffIdentificationSystemDescriptor#State";
         public static string ProgramAssignmentDescriptor = @"?programAssignmentDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramAssignmentDescriptor#Regular Education");
         public static string EmploymentStatusDescriptor = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://mybps.org/EmploymentStatusDescriptor#");
         public static string EmploymentStatusDescriptorOther = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/EmploymentStatusDescriptor#");
-        public static string StaffClassificationDescriptor1 = @"& StaffClassificationDescriptor = " +Uri.EscapeDataString("uri://ed-fi.org/StaffClassificationDescriptor#");
+        public static string StaffClassificationDescriptor1 = @"&StaffClassificationDescriptor=" +Uri.EscapeDataString("uri://ed-fi.org/StaffClassificationDescriptor#");
         public static string StaffClassificationDescriptor = @"&uri://ed-fi.org/StaffClassificationDescriptor#";
         public static string EmploymentStatusDescriptorField = "uri://mybps.org/EmploymentStatusDescriptor#";
 
@@ -78,6 +79,7 @@ namespace BPS.EdOrg.Loader
         public static string SchoolUrl { get; set; } = @"ed-fi/schools";
         public static string API_SpecialEdServiceDescriptor { get; set; } = @"ed -fi/specialEducationSettingDescriptors";
         public static string StaffAssociationUrl { get; set; } = @"ed-fi/staffSchoolAssociations";
+        public static string DataSourceXml { get; set; } = @"In Xml";
 
         // Get and set the GetEmpStatusDescp on desc code
         public static string GetEmpStatusDescp(string descCode)
@@ -204,37 +206,37 @@ namespace BPS.EdOrg.Loader
         }
         public static string StaffClassificationDescriptorCode(string jobCode, int deptID, string unionCode)
        {
-            if (jobCode.Equals("S00022") || jobCode.Equals("S00023") || jobCode.Equals("S00170") ||
+            if ((jobCode.Equals("S00022") || jobCode.Equals("S00023") || jobCode.Equals("S00170") ||
                 jobCode.Equals("S00167") || jobCode.Equals("S00200") || jobCode.Equals("S00218") ||
                 jobCode.Equals("S00340") || jobCode.Equals("S00445") || jobCode.Equals("S20324") || 
-                jobCode.Equals("S01077") && deptID >= 101200 && deptID <= 101699)
+                jobCode.Equals("S01077")) && (deptID >= 101200 && deptID <= 101699))
                 return "School Leader";
 
-            if (jobCode.Equals("S00065") || jobCode.Equals("S00169") || jobCode.Equals("S00183") ||
+            if ((jobCode.Equals("S00065") || jobCode.Equals("S00169") || jobCode.Equals("S00183") ||
                 jobCode.Equals("S00257") || jobCode.Equals("S00281") || jobCode.Equals("S00354") ||
                 jobCode.Equals("S00406") || jobCode.Equals("S00407") || jobCode.Equals("S00413") ||
                 jobCode.Equals("S01070") || jobCode.Equals("S20113") || jobCode.Equals("S20201") ||
-                jobCode.Equals("S20267") || jobCode.Equals("S20302") && deptID >= 101200 && deptID <= 101699 )
+                jobCode.Equals("S20267") || jobCode.Equals("S20302")) && (deptID >= 101200 && deptID <= 101699))
                 return "School Specialist";
 
-            if (jobCode.Equals("S00116") || jobCode.Equals("S00118") || jobCode.Equals("S00220") ||
+            if ((jobCode.Equals("S00116") || jobCode.Equals("S00118") || jobCode.Equals("S00220") ||
                 jobCode.Equals("S00245") || jobCode.Equals("S00465") || jobCode.Equals("S01079") ||
-                jobCode.Equals("S11100") || jobCode.Equals("S85026") && (unionCode.Equals("BAS") || unionCode.Equals("BPS")) &&
-                deptID >= 101200 && deptID <= 101699)
+                jobCode.Equals("S11100") || jobCode.Equals("S85026")) && (unionCode.Equals("BAS") || unionCode.Equals("BPS") &&
+                (deptID >= 101200 && deptID <= 101699)))
                 return "School Administrator";
 
-            if (jobCode.Equals("S00116") || jobCode.Equals("S00118") || jobCode.Equals("S00220") ||
+            if ((jobCode.Equals("S00116") || jobCode.Equals("S00118") || jobCode.Equals("S00220") ||
                 jobCode.Equals("S00245") || jobCode.Equals("S00465") || jobCode.Equals("S01079") ||
-                jobCode.Equals("S11100") || jobCode.Equals("S85026") &&
-                (deptID >= 101000 && deptID <= 101199 || deptID >= 101700 && deptID <= 101999))
+                jobCode.Equals("S11100") || jobCode.Equals("S85026")) &&
+                (deptID >= 101000 && (deptID <= 101199 || deptID >= 101700 && deptID <= 101999)))
                 return "LEA Administrator";
 
-            if (jobCode.Equals("S00065") || jobCode.Equals("S00169") || jobCode.Equals("S00183") ||
+            if ((jobCode.Equals("S00065") || jobCode.Equals("S00169") || jobCode.Equals("S00183") ||
                 jobCode.Equals("S00257") || jobCode.Equals("S00281") || jobCode.Equals("S00354") ||
                 jobCode.Equals("S00406") || jobCode.Equals("S00407") || jobCode.Equals("S00413") ||
                 jobCode.Equals("S01070") || jobCode.Equals("S20113") || jobCode.Equals("S20201") ||
-                jobCode.Equals("S20267") || jobCode.Equals("S20302") &&
-                (deptID >= 101000 && deptID <= 101199 || deptID >= 101700 && deptID <= 101999))
+                jobCode.Equals("S20267") || jobCode.Equals("S20302")) &&
+                ((deptID >= 101000 && deptID <= 101199 || deptID >= 101700 && deptID <= 101999)))
                 return "LEA Specialist";
 
             var strings = new List<string> { "S20113", "S20100", "S20100", "S20315", "S20310", "S01080" };
@@ -361,12 +363,12 @@ namespace BPS.EdOrg.Loader
             }
             return null;
         }
+
         /// <summary>
         /// Gets the LRE Setting code DesciptorId .
         /// </summary>
         /// <param name="descSetting"></param>
         /// <returns></returns>
-
         public static string GetSpecialEducationSetting(int? descSetting)
         {
             switch (descSetting)
@@ -404,7 +406,72 @@ namespace BPS.EdOrg.Loader
 
 
         }
-      
+        /// <summary>
+        /// Gets the LevelOfNeed DesciptorId .
+        /// </summary>
+        /// <param name="descSetting"></param>
+        /// <returns></returns>
+        public static string GetLevelOfNeed(string lodId)
+        {
+            switch (lodId)
+            {
+                case "04":
+                    return @"uri://mybps.org/LevelOfNeedDescriptor#04";               
+                case "03":
+                    return @"uri://mybps.org/LevelOfNeedDescriptor#03";
+                case "02":
+                    return @"uri://mybps.org/LevelOfNeedDescriptor#02";
+                case "01":
+                    return @"uri://mybps.org/LevelOfNeedDescriptor#01";
+                default:
+                    return null;
+            }
+
+
+        }
+
+        /// <summary>
+        /// Gets the Disability DesciptorId .
+        /// </summary>
+        /// <param name="descSetting"></param>
+        /// <returns></returns>
+        public static string GetDisabilityDescriptor(string disabilityId)
+        {
+            switch (disabilityId)
+            {
+                case "01":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Intellectual Disability";
+                case "02":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Sensory impairment";
+                case "03":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Speech or Language Impairment";
+                case "04":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Visual Impairment, including Blindness";
+                case "05":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Serious Emotional Disability";
+                case "06":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Physical Disability";
+                case "07":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Other Health Impairment";
+                case "08":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Specific Learning Disability";
+                case "09":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Deaf-Blindness";
+                case "10":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Multiple Disabilities";
+                case "11":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Autism Spectrum Disorders";
+                case "12":
+                    return @"uri://ed-fi.org/DisabilityDescriptor#Mental impairment";
+                case "13":
+                    return @"uri://mybps.org/DisabilityDescriptor#Developmental Delay (ages 3–9 only)";
+                default:
+                    return null;
+            }
+
+
+        }
     }
 
 }
+

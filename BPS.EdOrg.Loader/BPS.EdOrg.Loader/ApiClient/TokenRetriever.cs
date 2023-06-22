@@ -53,6 +53,7 @@ namespace BPS.EdOrg.Loader.ApiClient
             var accessCodeRequest = new RestRequest("oauth/authorize", Method.POST);
             accessCodeRequest.AddParameter("Client_id", clientKey);
             accessCodeRequest.AddParameter("Response_type", "code");
+           
 
             var accessCodeResponse = oauthClient.Execute<AccessCodeResponse>(accessCodeRequest);
             if (accessCodeResponse.StatusCode != HttpStatusCode.OK)
@@ -80,6 +81,7 @@ namespace BPS.EdOrg.Loader.ApiClient
             //bearerTokenRequest.AddParameter("Code", accessCode);
             //bearerTokenRequest.AddParameter("Grant_type", "authorization_code");
 
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             var bearerTokenResponse = oauthClient.Execute<BearerTokenResponse>(bearerTokenRequest);
             if (bearerTokenResponse.StatusCode != HttpStatusCode.OK)
             {
