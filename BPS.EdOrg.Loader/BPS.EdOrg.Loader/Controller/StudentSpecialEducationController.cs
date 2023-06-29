@@ -862,10 +862,10 @@ namespace BPS.EdOrg.Loader.Controller
                         {
                             string stuId = item.studentReference.studentUniqueId;
                             bool flag = false;
-
+                            //string dataSource = null;
                             // Getting the DataSource as xml or txt for pcg records
-                            if (item._ext != null) dataSource = item._ext.myBPS.dataSource;
-                            rootObject._ext.myBPS.dataSource = Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
+                            //if (item._ext != null) dataSource = item._ext.myBPS.dataSource;
+                            //rootObject._ext.myBPS.dataSource = Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
 
                             // Comparing the SourceSystemId in ODS and file
                             string sysSrcId_ODS = item._ext.myBPS.sourceSystemId;
@@ -900,7 +900,7 @@ namespace BPS.EdOrg.Loader.Controller
 
                             else
                             {
-                                rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
+                                //rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
                                 string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
                                 response = edfiApi.PostData(json, client, token);
                                 Log.Info("StudentSpecialEducation POST for studentUniqueId:" + spEducation.studentUniqueId);
@@ -915,7 +915,7 @@ namespace BPS.EdOrg.Loader.Controller
                     }
                     else
                     {
-                        rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
+                        //rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
                         string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
                         response = edfiApi.PostData(json, client, token);
                         Log.Info("StudentSpecialEducation POST for studentUniqueId:" + spEducation.studentUniqueId);
@@ -1087,7 +1087,7 @@ namespace BPS.EdOrg.Loader.Controller
                         {
                             iepExitDate = spList.IepExitDate,
                             parentResponse = spList.IepParentResponse,
-                            dataSource = Constants.DataSourceXml
+                            //dataSource = Constants.DataSourceXml
 
                         }
                     }

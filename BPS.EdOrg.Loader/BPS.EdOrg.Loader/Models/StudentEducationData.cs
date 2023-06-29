@@ -204,7 +204,7 @@ namespace BPS.EdOrg.Loader.Models
         public string costSharingAgency { get; set; }
         public bool isCostSharing { get; set; }
         public string parentResponse { get; set; }
-        //public string dataSource { get; set; }
+        public string dataSource { get; set; }
         public string sourceSystemId { get; set; }
         public string levelOfNeedDescriptor { get; set; }
     }
