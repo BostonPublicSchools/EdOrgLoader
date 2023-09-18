@@ -1,17 +1,13 @@
 ﻿using System;
 using log4net;
-using System.Collections.Generic;
-using System.Xml;
-using System.IO;
-using System.Configuration;
 using System.Diagnostics;
 using System.Text;
-using BPS.EdOrg.Loader.Models;
 using BPS.EdOrg.Loader.XMLDataLoad;
 using BPS.EdOrg.Loader.MetaData;
 using BPS.EdOrg.Loader.EdFi.Api;
 using BPS.EdOrg.Loader.Controller;
-using System.DirectoryServices;
+
+using System.Threading.Tasks;
 
 namespace BPS.EdOrg.Loader
 {
@@ -37,8 +33,6 @@ namespace BPS.EdOrg.Loader
             var result = param.Parse(args);
 
             if (result.HasErrors || !param.Object.IsValid)
-
-
             {
                 System.Console.Write(result.ErrorText);
                 System.Console.Write(param.Object.ErrorText);
@@ -51,9 +45,10 @@ namespace BPS.EdOrg.Loader
                     LogConfiguration(param.Object);
 
                     //Creating the xml and executing the file through command line parser   
-                    RunDeptFile(param);                    
+                    RunDeptFile(param);
+                    RunIEPFile(param);                    
                     RunJobCodeFile(param);
-                    RunAlertIEPFile(param);
+                    RunAlertFile(param);
                     RunStaffEmail(param);
                     RunStaffAddressFile(param);
                     RunStaffContactFile(param);
@@ -188,7 +183,7 @@ namespace BPS.EdOrg.Loader
             }
         }
 
-        
+
         private static void RunJobCodeFile(CommandLineParser param)
         {
 
@@ -205,8 +200,10 @@ namespace BPS.EdOrg.Loader
                 staffController = new StaffAssociationController(token, param.Object, Log);
 
                 Log.Info("staff Employment Association Started...");
+                Console.WriteLine("staff Employment Association Started...");
                 staffController.StaffEmploymentAssociationData(token, param.Object);
                 Log.Info("staff Assignment Association Started...");
+                Console.WriteLine("staff Assignment Association Started...");
                 staffController.StaffAssignmentAssociationData(token, param.Object);
                
             }
@@ -286,18 +283,40 @@ namespace BPS.EdOrg.Loader
             
 
         }
-        private static void RunAlertIEPFile(CommandLineParser param)
+        private static void RunIEPFile(CommandLineParser param)
         {
             ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            //parseXmls.CreateXmlEdPlanToAspenTxt();
+            //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading Edplan to Aspen file
             parseXmls.CreateXmlSpedSimsTxt();
             var token = edfiApi.GetAuthToken();
             if (token != null)
             {
+                var sw1 = System.Diagnostics.Stopwatch.StartNew();
                 StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                
                 studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
                 studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
+                TimeSpan t = TimeSpan.FromMilliseconds(sw1.ElapsedMilliseconds);
+                Console.WriteLine(string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
+                t.Hours,
+                t.Minutes,
+                t.Seconds,
+                t.Milliseconds));
+                sw1.Stop();
+                //await Task.Run(() =>  StudentSpecialEducationController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls)));
+                //studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
+               
+            }
+            else Log.Error("Token is not generated, ODS not updated");
+
+        }
+
+        private static void RunAlertFile(CommandLineParser param)
+        {
+            ParseXmls parseXmls = new ParseXmls(param.Object, Log);            
+            var token = edfiApi.GetAuthToken();
+            if (token != null)
+            {
+                StudentSpecialEducationController controller = new StudentSpecialEducationController();
                 studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
                 studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
 

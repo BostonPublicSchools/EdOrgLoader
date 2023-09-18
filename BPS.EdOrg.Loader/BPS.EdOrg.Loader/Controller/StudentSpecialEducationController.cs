@@ -14,9 +14,10 @@ using BPS.EdOrg.Loader.XMLDataLoad;
 using BPS.EdOrg.Loader.MetaData;
 using BPS.EdOrg.Loader.EdFi.Api;
 using Formatting = Newtonsoft.Json.Formatting;
-using System.Web;
-using Newtonsoft.Json.Linq;
 using System.Globalization;
+using System.Threading.Tasks;
+using System.Runtime.Caching;
+using System.Runtime.Remoting.Contexts;
 
 namespace BPS.EdOrg.Loader.Controller
 {
@@ -24,7 +25,7 @@ namespace BPS.EdOrg.Loader.Controller
     {
         private static readonly ILog Log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static EdFiApiCrud edfiApi = new EdFiApiCrud();
-        private Notification notification;
+        private static Notification notification;
         public void UpdateAlertSpecialEducationData(string token, ParseXmls prseXMl)
         {
 
@@ -43,7 +44,7 @@ namespace BPS.EdOrg.Loader.Controller
                     if (studentSpecialEducationList.EducationOrganizationId != null && studentSpecialEducationList.Name != null && studentSpecialEducationList.Type != null)
                     {
                         // Check if the Program already exists in the ODS if not first enter the Progam.
-                        VerifyProgramData(token, studentSpecialEducationList.EducationOrganizationId, studentSpecialEducationList.Name, studentSpecialEducationList.Type);
+                        VerifyProgramData(token, studentSpecialEducationList.ProgramEducationOrganizationId, studentSpecialEducationList.Name, studentSpecialEducationList.Type);
                         if (studentSpecialEducationList.StudentUniqueId != null)
                         {
                             if (!string.IsNullOrEmpty(studentSpecialEducationList.BeginDate))                                
@@ -82,13 +83,13 @@ namespace BPS.EdOrg.Loader.Controller
                     {
                         var studentsNotInXml = studentSpecialEducations.Where(t2 => students.All(t1 => !t2.studentReference.studentUniqueId.Equals(t1)) && (t2.EndDate == null));
                         foreach (var item in studentsNotInXml)
-                        {
-                                                        
+                        {                                                        
                             // Set enddate in case the sTudent doesn't exist in IEP file anymore
                             endDate = DateTime.Now.ToString();
                             if (!String.IsNullOrEmpty(endDate))
                                 item.EndDate = endDate.Split()[0];
                             SetEndDate(specialEdPlan, token, item);
+                            Console.WriteLine("Offset" + offset);
                         }
                     }
 
@@ -104,12 +105,12 @@ namespace BPS.EdOrg.Loader.Controller
                         //offset 16100 has some issue skipping the offset and loading again
                         if (studentSpecialEducations == null)
                         {
-                            offset = offset + 100;
+                            offset = offset + 1000;
                             studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
                         }
-
+                        Console.WriteLine("Offset" + offset);
                     }
-                    offset = offset + 100;
+                    offset = offset + 1000;
                     studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
                 }
             }
@@ -179,7 +180,7 @@ namespace BPS.EdOrg.Loader.Controller
             return students;
         }
 
-        public List<UpdateEndDateStudent> GetStudentSpecialEducation(string specialEdPlan, string token,int offset = 0)
+        public static List<UpdateEndDateStudent> GetStudentSpecialEducation(string specialEdPlan, string token,int offset = 0)
         {
             List<UpdateEndDateStudent> data =  null;
             try
@@ -206,66 +207,33 @@ namespace BPS.EdOrg.Loader.Controller
             }
             return data;
         }
-        public void UpdateIEPSpecialEducationProgramAssociationData(string token, ParseXmls prseXMl)
+
+        
+
+        
+        public  void UpdateIEPSpecialEducationProgramAssociationData(string token, ParseXmls prseXMl)
         {
             try
             {
+
                 if (!Directory.Exists(ConfigurationManager.AppSettings["XMLExtractedPath"]))
                     Directory.CreateDirectory(ConfigurationManager.AppSettings["XMLExtractedPath"]);
 
                 foreach (System.IO.FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
-                    file.Delete();
+                file.Delete();
                 ZipFile.ExtractToDirectory(ConfigurationManager.AppSettings["XMLDeploymentPath"] + ConfigurationManager.AppSettings["XMLZip"], ConfigurationManager.AppSettings["XMLExtractedPath"]);
+                
+                // parsing spedsims attributes from spedSims file
                 XmlDocument xmlDocSpedsims = prseXMl.LoadXml("SpedSims");
-
 
                 foreach (FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
                 {
                     var fragments = File.ReadAllText(file.FullName).Replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
-                    fragments = fragments.Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "").Replace("&", "&amp;");                    
+                    fragments = fragments.Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "").Replace("&", "&amp;");
                     XmlDocument xmlDoc = prseXMl.ToXmlDocument(XDocument.Parse(fragments));
                     XmlNodeList nodeList = xmlDoc.SelectNodes("//root/iep");
-                    
-                    foreach (XmlNode node in nodeList)
-                    {
-                       
-                        // Parsing PCG IEP XML to get IEP data 
-                        var spEducationService = GetSpecialEducationXml(node);
-                        // In case of Duplicate Services in Xml the api request is not successfully posted through the api
-                        var spEducation = CheckDuplicateServices(spEducationService);
-
-                        //Getting Import diabilty desc from sims file
-                        var getStudentSpedInfo = xmlDocSpedsims.SelectNodes(@"//root/iep/studentNumber").Cast<XmlNode>().Where(a=>a.InnerText== spEducation.studentUniqueId).Select(x => x.ParentNode).ToList();
-                        if (getStudentSpedInfo.Count > 0)
-                        foreach (var item in getStudentSpedInfo)
-                        {
-                            var studentSped = GetStudentSpedXml(item);
-                                spEducation.levelofNeed = Constants.GetLevelOfNeed(studentSped.levelNeedInfo);
-                                spEducation.disability = Constants.GetDisabilityDescriptor(studentSped.disabilityInfo);
-                        }
-
-                        //Check required field exist in XML source 
-                        if (!string.IsNullOrEmpty(spEducation.programEducationOrganizationId) && !string.IsNullOrEmpty(spEducation.programName) && !string.IsNullOrEmpty(spEducation.programTypeDescriptorId) && !string.IsNullOrEmpty(spEducation.studentUniqueId))  
-                        { 
-                            // Check if the Program already exists in the ODS if not first enter the Progam.
-                            VerifyProgramData(token, spEducation.programEducationOrganizationId, spEducation.programName, spEducation.programTypeDescriptorId);
-
-                            // Insert if SignatureDate, IepBeginDate,IepEndDate is not null
-                            if (!string.IsNullOrEmpty(spEducation.beginDate) && !string.IsNullOrEmpty(spEducation.iepBeginDate) && !string.IsNullOrEmpty(spEducation.iepEndDate))
-                                 InsertIEPStudentSpecialEducation(token, spEducation);
-                           
-                            if(!string.IsNullOrEmpty(spEducation.iepExitDate))
-                                UpdateIEPStudentSpecialEducation(token, spEducation);
-
-
-                        }                        
-                        else
-                        {
-                            Log.Info("Required fields are empty for studentUniqueId:" + spEducation.studentUniqueId);
-                        }
-                    }
-                    if (File.Exists(Constants.LOG_FILE))
-                        notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
+                    //await Task.Run(() => ProcessIEPXml(nodeList, xmlDocSpedsims, token));  
+                    ProcessIEPXml(nodeList, xmlDocSpedsims, token);
                 }
             }
             catch (Exception ex)
@@ -274,7 +242,63 @@ namespace BPS.EdOrg.Loader.Controller
             }
         }
        
-        private StudentSpecialEducationProgramAssociation CheckDuplicateServices(StudentSpecialEducationProgramAssociation spEducationServices)
+
+        private static void ProcessIEPXml(XmlNodeList nodeList, XmlDocument xmlDocSpedsims, string token)
+        {
+            //var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 10 };
+            foreach (XmlNode node in nodeList)   
+            //Parallel.ForEach< XmlNodeList>(nodeList, new ParallelOptions { MaxDegreeOfParallelism = 2 }, node =>
+
+            {
+
+                // Parsing PCG IEP XML to get IEP data 
+                var spEducationService = GetSpecialEducationXml(node);
+                Console.WriteLine("processing for studentID : " + spEducationService.studentUniqueId);
+                // In case of Duplicate Services in Xml the api request is not successfully posted through the api
+                var spEducation = CheckDuplicateServices(spEducationService);
+
+                //Getting Import diabilty desc from sims file
+                var getStudentSpedInfo = xmlDocSpedsims.SelectNodes(@"//root/iep/studentNumber").Cast<XmlNode>().Where(a => a.InnerText == spEducation.studentUniqueId).Select(x => x.ParentNode).ToList();
+                if (getStudentSpedInfo.Count > 0)
+                    foreach (var item in getStudentSpedInfo)
+                    {
+                        var studentSped = GetStudentSpedXml(item);
+                        spEducation.levelofNeed = Constants.GetLevelOfNeed(studentSped.levelNeedInfo);
+                        spEducation.disability = Constants.GetDisabilityDescriptor(studentSped.disabilityInfo);
+                    }
+
+                //Check required field exist in XML source 
+                if (!string.IsNullOrEmpty(spEducation.programEducationOrganizationId) && !string.IsNullOrEmpty(spEducation.programName) && !string.IsNullOrEmpty(spEducation.programTypeDescriptorId) && !string.IsNullOrEmpty(spEducation.studentUniqueId))
+                {
+                    // Check if the Program already exists in the ODS if not first enter the Progam.
+                    VerifyProgramData(token, spEducation.programEducationOrganizationId, spEducation.programName, spEducation.programTypeDescriptorId);
+
+                    // Insert if SignatureDate, IepBeginDate,IepEndDate is not null
+                    if (!string.IsNullOrEmpty(spEducation.beginDate) && !string.IsNullOrEmpty(spEducation.iepBeginDate) && !string.IsNullOrEmpty(spEducation.iepEndDate))
+                        //await Task.Run(() => InsertIEPStudentSpecialEducation(token, spEducation));
+                        InsertIEPStudentSpecialEducation(token, spEducation);
+
+                    if (!string.IsNullOrEmpty(spEducation.iepExitDate))
+                        //await Task.Run(() => UpdateIEPStudentSpecialEducation(token, spEducation));
+                        UpdateIEPStudentSpecialEducation(token, spEducation);
+
+
+                }
+                else
+                {
+                    Log.Info("Required fields are empty for studentUniqueId:" + spEducation.studentUniqueId);
+                }
+            }
+            if (File.Exists(Constants.LOG_FILE))
+                notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
+        }
+    
+
+
+
+
+
+        private static StudentSpecialEducationProgramAssociation CheckDuplicateServices(StudentSpecialEducationProgramAssociation spEducationServices)
         {
             //Checking iep file with similar serviceDescriptor and calculating service duration for same
              var dupService = spEducationServices.relatedServices.GroupBy(x => new { x.SpecialEducationProgramServiceDescriptor, x._ext.myBPS.serviceLocation })
@@ -307,7 +331,7 @@ namespace BPS.EdOrg.Loader.Controller
             return spEducationServices;
         }
 
-        private int GetTotalMinutes(List<Service> dupService)
+        private static int GetTotalMinutes(List<Service> dupService)
         {
             var TotalMinutes = 0;
             
@@ -363,12 +387,12 @@ namespace BPS.EdOrg.Loader.Controller
 
 
 
-            public static IRestResponse VerifyProgramData(string token, string educationOrganizationId, string programName, string programType)
+            public static IRestResponse VerifyProgramData(string token, string programEdOrgId, string programName, string programType)
         {
             IRestResponse response = null;
             try
             {
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.API_Program+ Constants.educationOrganizationId + educationOrganizationId + Constants.programName + programName + Constants.programType + programType);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.API_Program+ Constants.educationOrganizationId + programEdOrgId + Constants.programName + programName + Constants.programType + programType);
 
                 response = edfiApi.GetData(client, token);
                 if (IsSuccessStatusCode((int)response.StatusCode))
@@ -379,7 +403,7 @@ namespace BPS.EdOrg.Loader.Controller
                         {
                             EducationOrganizationReference = new EdFiEducationReference
                             {
-                                educationOrganizationId = educationOrganizationId,
+                                educationOrganizationId = programEdOrgId,
                                 Link = new Link()
                                 {
                                     Rel = string.Empty,
@@ -540,8 +564,8 @@ namespace BPS.EdOrg.Loader.Controller
             try
             {
                 var rootObject = GetAlertSpecialEducation(token, spList);
-                string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);               
-
+                string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
+                Console.WriteLine("Inside Alert SpecialED");
                // check for Student and BeginDate 
                 var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + Constants.studentUniqueId + spList.StudentUniqueId + "&programName=504 Plan" + Constants.beginDate + spList.IepSignatureDate);
                 response = edfiApi.GetData(client, token);
@@ -841,6 +865,34 @@ namespace BPS.EdOrg.Loader.Controller
                 Log.Error("Something went wrong while updating the data in ODS, check the XML values" + ex.Message);
             }
             return specialEducation;
+
+
+        }
+
+        public List<EdFiStudentSpecialEducation> GetStudentSpecialEducation_IEP(string token, StudentSpecialEducationProgramAssociation spEducation)
+        {
+            
+            List < EdFiStudentSpecialEducation > results = new List<EdFiStudentSpecialEducation>();
+            var policy = new CacheItemPolicy { SlidingExpiration = new TimeSpan(2, 0, 0) };
+            IRestResponse response = null;
+            var client1 = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "?studentUniqueId=" + spEducation.studentUniqueId);
+            response = edfiApi.GetData(client1, token);
+
+            if (IsSuccessStatusCode((int)response.StatusCode))
+            {
+                if (response.Content.Length > 2)
+                {
+                    var data = JsonConvert.DeserializeObject<List<EdFiStudentSpecialEducation>>(response.Content);
+                    foreach (var item in data)
+                    {
+                        results.Add(item);
+                        
+                    }
+                }
+
+            }
+            return results;
+            
         }
 
         private static void InsertIEPStudentSpecialEducation(string token, StudentSpecialEducationProgramAssociation spEducation)
@@ -848,10 +900,9 @@ namespace BPS.EdOrg.Loader.Controller
             try
             {
                 IRestResponse response = null;
-                var rootObject = GetSpecialEducation(token, spEducation);
+                var rootObject = GetSpecialEducation(token, spEducation);                
 
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "?studentUniqueId=" + spEducation.studentUniqueId + "&programName = " + spEducation.programName);
-                //+Constants.beginDate+spEducation.beginDate);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "?studentUniqueId=" + spEducation.studentUniqueId+Constants.programName + spEducation.programName);
                 response = edfiApi.GetData(client, token);
                 if (IsSuccessStatusCode((int)response.StatusCode))
                 {
@@ -862,8 +913,9 @@ namespace BPS.EdOrg.Loader.Controller
                         {
                             string stuId = item.studentReference.studentUniqueId;
                             bool flag = false;
-                            //string dataSource = null;
+
                             // Getting the DataSource as xml or txt for pcg records
+                            //string dataSource = null;
                             //if (item._ext != null) dataSource = item._ext.myBPS.dataSource;
                             //rootObject._ext.myBPS.dataSource = Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
 
@@ -876,43 +928,40 @@ namespace BPS.EdOrg.Loader.Controller
                             if (item.id != null)
                             {
                                 string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
-                                if (!string.IsNullOrEmpty(spEducation.beginDate))                                
+                                if (!string.IsNullOrEmpty(spEducation.beginDate))
                                     if (stuId != null)
                                     {
+                                        if (spEducation.programEducationOrganizationId == "" || spEducation.programEducationOrganizationId.Equals(null)) spEducation.programEducationOrganizationId = Constants.educationOrganizationIdValue;
                                         if (stuId == spEducation.studentUniqueId && flag == true)
                                         {
-                                            if (spEducation.programEducationOrganizationId == "" || spEducation.programEducationOrganizationId.Equals(null)) spEducation.programEducationOrganizationId = Constants.educationOrganizationIdValue;
-                                            if (!item.beginDate.Equals(spEducation.beginDate) || !item.programReference.educationOrganizationId.Equals(spEducation.programEducationOrganizationId.TrimStart('0'))
-                                                || !item.programReference.ProgramName.Equals(spEducation.programName) || item.disabilities.Count == 0)
+                                            //In case of different primary fields delete and create record
+                                            if (!item.beginDate.Equals(spEducation.beginDate) || !item.programReference.educationOrganizationId.Equals(spEducation.programEducationOrganizationId.TrimStart('0')) || !item.programReference.ProgramName.Equals(spEducation.programName))
                                             {
                                                 response = edfiApi.DeleteData(new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + item.id), token);
                                                 if (IsSuccessStatusCode((int)response.StatusCode)) response = edfiApi.PostData(json, client, token);
                                                 Log.Info("StudentSpecialEducation POST for studentUniqueId:" + spEducation.studentUniqueId);
                                             }
-                                                
+
+                                        }
+                                        //changes related to new sysSrcId, in case it is new Insert else for same primary fields to update
+                                        else if (!sysSrcId_ODS.Equals(sysSrcId_file)) 
+                                        {       
+                                                response = edfiApi.PostData(json, client, token);
+                                                Log.Info("StudentSpecialEducation POST for studentUniqueId:" + spEducation.studentUniqueId);
+                                                if ((int)response.StatusCode > 204 || (int)response.StatusCode < 200)
+                                                {
+                                                    LogError(item, response);
+
+                                                }
                                         }
 
                                     }
-
-
+                                    
+                            }
+                            
 
                             }
-
-                            else
-                            {
-                                //rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
-                                string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
-                                response = edfiApi.PostData(json, client, token);
-                                Log.Info("StudentSpecialEducation POST for studentUniqueId:" + spEducation.studentUniqueId);
-                                if ((int)response.StatusCode > 204 || (int)response.StatusCode < 200)
-                                {
-                                    //LogError(item, response);
-
-                                }
-                            }
-
                         }
-                    }
                     else
                     {
                         //rootObject._ext.myBPS.dataSource = Constants.DataSourceXml;
@@ -1183,7 +1232,7 @@ namespace BPS.EdOrg.Loader.Controller
         /// Gets the data from the xml file
         /// </summary>
         /// <returns></returns>
-        private StudentSpecialEducationProgramAssociation GetSpecialEducationXml(XmlNode node)
+        private static StudentSpecialEducationProgramAssociation GetSpecialEducationXml(XmlNode node)
         {
             try
             {
@@ -1260,8 +1309,9 @@ namespace BPS.EdOrg.Loader.Controller
                 if (node.SelectSingleNode("schoolHoursPerWeek")!= null)if (node.SelectSingleNode("schoolHoursPerWeek").InnerText.Trim().Length > 0)                    
                     spEducation.schoolHoursPerWeek = Convert.ToDecimal(node.SelectSingleNode("schoolHoursPerWeek").InnerText.ToString()); // Null Check req need to Modify
                 if (node.SelectSingleNode("specialEducationHoursPerWeek") != null) if (node.SelectSingleNode("specialEducationHoursPerWeek").InnerText.Trim().Length > 0)
-                    if (Convert.ToDecimal(node.SelectSingleNode("specialEducationHoursPerWeek").InnerText.ToString()) < Convert.ToDecimal(999.99))
-                        spEducation.specialEducationHoursPerWeek = Convert.ToDecimal(node.SelectSingleNode("specialEducationHoursPerWeek").InnerText.ToString()); // Null Check req need to Modify
+                        if (Convert.ToDecimal(node.SelectSingleNode("specialEducationHoursPerWeek").InnerText.ToString()) < Convert.ToDecimal(999.99))
+                            spEducation.specialEducationHoursPerWeek = Convert.ToDecimal(node.SelectSingleNode("specialEducationHoursPerWeek").InnerText.ToString()); // Null Check req need to Modify
+                        else spEducation.specialEducationHoursPerWeek = Convert.ToDecimal(Constants.OutofBoundValue);
                 if (node.SelectSingleNode("SpecialEducationSetting") != null) if (node.SelectSingleNode("SpecialEducationSetting").InnerText.Trim().Length > 0)
                     spEducation.specialEducationSettingDescriptorId = Constants.GetSpecialEducationSetting(Int32.Parse(node.SelectSingleNode("SpecialEducationSetting").InnerText.ToString())) ?? null;
                         
@@ -1289,7 +1339,9 @@ namespace BPS.EdOrg.Loader.Controller
                             }
                          }
                     };
-                    if(!String.IsNullOrEmpty(relatedService.SpecialEducationProgramServiceDescriptor))
+                    if (!String.IsNullOrEmpty(relatedService.SpecialEducationProgramServiceDescriptor))
+                    if (String.IsNullOrEmpty(relatedService._ext.myBPS.serviceDuration))
+                            relatedService._ext.myBPS.serviceDuration = "0.0000";
                     spEducation.relatedServices.Add(relatedService);
 
                 }
@@ -1309,7 +1361,7 @@ namespace BPS.EdOrg.Loader.Controller
         /// Gets the data from the xml file
         /// </summary>
         /// <returns></returns>
-        private SpedSimsTxt GetStudentSpedXml(XmlNode node)
+        private static SpedSimsTxt GetStudentSpedXml(XmlNode node)
         {
             try
             {

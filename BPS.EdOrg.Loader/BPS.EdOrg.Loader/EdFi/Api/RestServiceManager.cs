@@ -31,7 +31,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                 if (!string.IsNullOrEmpty(_accessToken))
                 {
                     var httpClient = new RestClient(_configuration.CrossWalkSchoolApiUrl);                    
-                    int offset = 0, limit = 100;
+                    int offset = 0, limit = 1000;
                     bool hasRecords = true;
                     while (hasRecords)
                     {
@@ -88,7 +88,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                 if (!string.IsNullOrEmpty(_accessToken))
                 {
                     var httpClient = new RestClient(_configuration.CrossWalkEdServicecenterApiUrl);
-                    int offset = 0, limit = 100;
+                    int offset = 0, limit = 1000;
                     bool hasRecords = true;
                     while (hasRecords)
                     {
@@ -143,7 +143,7 @@ namespace BPS.EdOrg.Loader.EdFi.Api
                 if (!string.IsNullOrEmpty(_accessToken))
                 {
                     var httpClient = new RestClient(_configuration.CrossWalkStaffApiUrl);
-                    int offset = 0, limit = 100;
+                    int offset = 0, limit = 1000;
                     bool hasRecords = true;
                     while (hasRecords)
                     {

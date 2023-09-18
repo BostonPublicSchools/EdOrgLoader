@@ -1365,7 +1365,7 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
             try
             {
                 XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(ConfigurationManager.AppSettings["XMLOutputPath"] + $"/"+ xmlFileName + $"-{DateTime.Now.Date.Month}-{ DateTime.Now.Date.Day}-{ DateTime.Now.Date.Year}.xml");
+                xmlDoc.Load(ConfigurationManager.AppSettings["XMLOutputPath"] + $"/" + xmlFileName + $"-{DateTime.Now.Date.Month}-{ DateTime.Now.Date.Day}-{ DateTime.Now.Date.Year}.xml");
                 return xmlDoc;
 
             }

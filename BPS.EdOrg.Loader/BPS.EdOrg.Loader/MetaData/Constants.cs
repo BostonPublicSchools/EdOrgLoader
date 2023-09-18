@@ -81,6 +81,8 @@ namespace BPS.EdOrg.Loader
         public static string StaffAssociationUrl { get; set; } = @"ed-fi/staffSchoolAssociations";
         public static string DataSourceXml { get; set; } = @"In Xml";
 
+        public static string OutofBoundValue { get; set; } = "-1";
+
         // Get and set the GetEmpStatusDescp on desc code
         public static string GetEmpStatusDescp(string descCode)
         {

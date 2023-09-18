@@ -83,9 +83,6 @@ namespace BPS.EdOrg.Loader.Controller
                             if (educationOrganizationId != null && educationOrganizationId.OperationalStatus.Equals(Constants.OperationalStatusActive))
                                 UpdateStaffEmploymentAssociationData(staffEmploymentNodeList, educationOrganizationId, token);
 
-
-
-
                         }
 
 
@@ -157,7 +154,7 @@ namespace BPS.EdOrg.Loader.Controller
             if (!string.IsNullOrEmpty(schoolid))
             {
                 //Inserting new Assignments and updating the postioTitle with JobCode - JobDesc
-                if (!string.IsNullOrEmpty(staffAssignmentNodeList.StaffUniqueIdValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.BeginDateValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.StaffClassification) && !string.IsNullOrEmpty(staffAssignmentNodeList.PositionCodeDescription))
+                if (!string.IsNullOrEmpty(staffAssignmentNodeList.StaffUniqueIdValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.BeginDateValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.StaffClassification) && !string.IsNullOrEmpty(staffAssignmentNodeList.PositionCodeDescription) && !string.IsNullOrEmpty(staffAssignmentNodeList.HireDateValue))
                 {
                     string id = GetAssignmentAssociationId(token, schoolid, staffAssignmentNodeList);
                                          
@@ -1462,6 +1459,7 @@ namespace BPS.EdOrg.Loader.Controller
                         {
                             var resp = _edfiApi.PutData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrl + "/" + id), token);
                             _log.Info("Updated into StaffEducationOrganizationEmploymentAssociation for Staff Id : " + staffData.staffUniqueIdValue);
+                            Console.WriteLine("Updated into StaffEducationOrganizationEmploymentAssociation for Staff Id : " + staffData.staffUniqueIdValue);
                             return id;
                         }
                             
@@ -1473,6 +1471,7 @@ namespace BPS.EdOrg.Loader.Controller
                     //Insert Data                      
                     var resp = _edfiApi.PostData(json, client, token);
                     _log.Info("Inserted into StaffEducationOrganizationEmploymentAssociation for Staff Id : " + staffData.staffUniqueIdValue);
+                    Console.WriteLine("Inserted into StaffEducationOrganizationEmploymentAssociation for Staff Id : " + staffData.staffUniqueIdValue);
                 }
             }
 
