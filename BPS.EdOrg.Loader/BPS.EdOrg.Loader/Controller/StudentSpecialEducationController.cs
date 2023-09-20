@@ -66,14 +66,15 @@ namespace BPS.EdOrg.Loader.Controller
             }
 
         }
-        public void UpdateEndDateSpecialEducation(string specialEdPlan, string token, ParseXmls prseXMl, List<string> students)
+        public void UpdateEndDateSpecialEducation(string specialEdPlan, string token, ParseXmls prseXMl)
         {
             try
             {
                 int offset = 0;
                 string endDate = null;
                 List<UpdateEndDateStudent> studentSpecialEducations = null;
-                           
+                var students = GetStudentsInIEPXml(prseXMl);
+
                 // Get the ODS data 
                 studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token, offset);
 
@@ -208,14 +209,31 @@ namespace BPS.EdOrg.Loader.Controller
             return data;
         }
 
-        
+        private Dictionary<string, SpedSimsTxt> _CACHE_SPED_SIMS_LOOKUP = null;
+        private Dictionary<string, SpedSimsTxt> GenerateSpedSimsLookup(ParseXmls prseXMl)
+        {
+            if (_CACHE_SPED_SIMS_LOOKUP != null)
+                return _CACHE_SPED_SIMS_LOOKUP;
 
-        
+            var lookup = new Dictionary<string, SpedSimsTxt>();
+            // parsing spedsims attributes from spedSims file
+            XmlDocument xmlDocSpedsims = prseXMl.LoadXml("SpedSims");
+            foreach (XmlNode item in xmlDocSpedsims.SelectNodes(@"//root/iep"))
+            {
+                var studentSped = GetStudentSpedXml(item);
+                if (!lookup.ContainsKey(studentSped.studentNumber)) lookup.Add(studentSped.studentNumber, studentSped);
+            }
+            _CACHE_SPED_SIMS_LOOKUP = lookup;
+
+
+            return _CACHE_SPED_SIMS_LOOKUP;
+        }
+
+
         public  void UpdateIEPSpecialEducationProgramAssociationData(string token, ParseXmls prseXMl)
         {
             try
             {
-
                 if (!Directory.Exists(ConfigurationManager.AppSettings["XMLExtractedPath"]))
                     Directory.CreateDirectory(ConfigurationManager.AppSettings["XMLExtractedPath"]);
 
@@ -224,7 +242,7 @@ namespace BPS.EdOrg.Loader.Controller
                 ZipFile.ExtractToDirectory(ConfigurationManager.AppSettings["XMLDeploymentPath"] + ConfigurationManager.AppSettings["XMLZip"], ConfigurationManager.AppSettings["XMLExtractedPath"]);
                 
                 // parsing spedsims attributes from spedSims file
-                XmlDocument xmlDocSpedsims = prseXMl.LoadXml("SpedSims");
+                var spedSimsLookup = GenerateSpedSimsLookup(prseXMl);
 
                 foreach (FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
                 {
@@ -233,7 +251,7 @@ namespace BPS.EdOrg.Loader.Controller
                     XmlDocument xmlDoc = prseXMl.ToXmlDocument(XDocument.Parse(fragments));
                     XmlNodeList nodeList = xmlDoc.SelectNodes("//root/iep");
                     //await Task.Run(() => ProcessIEPXml(nodeList, xmlDocSpedsims, token));  
-                    ProcessIEPXml(nodeList, xmlDocSpedsims, token);
+                    ProcessIEPXml(nodeList, spedSimsLookup, token);
                 }
             }
             catch (Exception ex)
@@ -243,7 +261,7 @@ namespace BPS.EdOrg.Loader.Controller
         }
        
 
-        private static void ProcessIEPXml(XmlNodeList nodeList, XmlDocument xmlDocSpedsims, string token)
+        private static void ProcessIEPXml(XmlNodeList nodeList, Dictionary<string, SpedSimsTxt> spedSimsLookup, string token)
         {
             //var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 10 };
             foreach (XmlNode node in nodeList)   
@@ -258,14 +276,11 @@ namespace BPS.EdOrg.Loader.Controller
                 var spEducation = CheckDuplicateServices(spEducationService);
 
                 //Getting Import diabilty desc from sims file
-                var getStudentSpedInfo = xmlDocSpedsims.SelectNodes(@"//root/iep/studentNumber").Cast<XmlNode>().Where(a => a.InnerText == spEducation.studentUniqueId).Select(x => x.ParentNode).ToList();
-                if (getStudentSpedInfo.Count > 0)
-                    foreach (var item in getStudentSpedInfo)
-                    {
-                        var studentSped = GetStudentSpedXml(item);
-                        spEducation.levelofNeed = Constants.GetLevelOfNeed(studentSped.levelNeedInfo);
-                        spEducation.disability = Constants.GetDisabilityDescriptor(studentSped.disabilityInfo);
-                    }
+                if (spedSimsLookup.TryGetValue(spEducation.studentUniqueId, out SpedSimsTxt studentSped))
+                {
+                    spEducation.levelofNeed = Constants.GetLevelOfNeed(studentSped.levelNeedInfo);
+                    spEducation.disability = Constants.GetDisabilityDescriptor(studentSped.disabilityInfo);
+                }
 
                 //Check required field exist in XML source 
                 if (!string.IsNullOrEmpty(spEducation.programEducationOrganizationId) && !string.IsNullOrEmpty(spEducation.programName) && !string.IsNullOrEmpty(spEducation.programTypeDescriptorId) && !string.IsNullOrEmpty(spEducation.studentUniqueId))
@@ -281,7 +296,6 @@ namespace BPS.EdOrg.Loader.Controller
                     if (!string.IsNullOrEmpty(spEducation.iepExitDate))
                         //await Task.Run(() => UpdateIEPStudentSpecialEducation(token, spEducation));
                         UpdateIEPStudentSpecialEducation(token, spEducation);
-
 
                 }
                 else
