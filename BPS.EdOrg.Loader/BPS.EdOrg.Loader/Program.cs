@@ -46,14 +46,15 @@ namespace BPS.EdOrg.Loader
 
                     //Creating the xml and executing the file through command line parser   
                     RunDeptFile(param);
-                    RunIEPFile(param);                    
+                    RunIEPFile(param);
                     RunJobCodeFile(param);
                     RunAlertFile(param);
                     RunStaffEmail(param);
-                    RunStaffAddressFile(param);
                     RunStaffContactFile(param);
+                    RunStaffAddressFile(param);
                     RunTransferCasesFile(param);
                     
+
                 }
                 catch (Exception ex)
                 {
@@ -291,19 +292,10 @@ namespace BPS.EdOrg.Loader
             var token = edfiApi.GetAuthToken();
             if (token != null)
             {
-                var sw1 = System.Diagnostics.Stopwatch.StartNew();
                 StudentSpecialEducationController controller = new StudentSpecialEducationController();
                 studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
                 studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
-                TimeSpan t = TimeSpan.FromMilliseconds(sw1.ElapsedMilliseconds);
-                Console.WriteLine(string.Format("{0:D2}h:{1:D2}m:{2:D2}s:{3:D3}ms",
-                t.Hours,
-                t.Minutes,
-                t.Seconds,
-                t.Milliseconds));
-                sw1.Stop();
-                //await Task.Run(() =>  StudentSpecialEducationController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls)));
-                //studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
+                
                
             }
             else Log.Error("Token is not generated, ODS not updated");

@@ -73,7 +73,7 @@ namespace BPS.EdOrg.Loader
         public static string API_Program { get; set; } = @"ed-fi/programs";
         public static string API_ProgramServiceDescriptor { get; set; } = @"ed-fi/specialEducationProgramServiceDescriptors";
         public static string StudentSpecialEducation { get; set; } = @"ed-fi/studentSpecialEducationProgramAssociations";
-        public static string StudentSpecialEducationLimit { get; set; } = @"ed-fi/studentSpecialEducationProgramAssociations?limit=100";
+        public static string StudentSpecialEducationLimit { get; set; } = @"ed-fi/studentSpecialEducationProgramAssociations?limit=1000";
         public static string StudentProgramAssociation { get; set; } = @"ed-fi/studentProgramAssociations";
         public static string API_ServiceDescriptor { get; set; } = @"ed-fi/serviceDescriptors";
         public static string SchoolUrl { get; set; } = @"ed-fi/schools";
