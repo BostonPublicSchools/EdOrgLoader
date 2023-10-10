@@ -299,14 +299,14 @@ namespace BPS.EdOrg.Loader.Controller
                 foreach (var item in staffEmailsLDAP)
                 {
                     List<StaffElectronicMailsData> respEmail = new List<StaffElectronicMailsData>();
-                    
-                        var staffEmailPersonal = staffEmailsHome.Where(x => x.Id.Equals(item.Key)).FirstOrDefault();
-                        if (staffEmailPersonal != null)
-                        {
-                            if (staffEmailPersonal.electronicMailAddress != null) respEmail.Add(new StaffElectronicMailsData { Id = item.Key, electronicMailAddress = staffEmailPersonal.electronicMailAddress, electronicMailTypeDescriptor = "uri://ed-fi.org/ElectronicMailTypeDescriptor#Home/Personal", primaryEmailAddressIndicator = staffEmailPersonal.primaryEmailAddressIndicator });
-                            indicator = staffEmailPersonal.primaryEmailAddressIndicator;
-                        }
-                        var staffEmail = staffEmailsLDAP.Where(x => x.Key.Equals(item.Key)).Select(a => a.Value).FirstOrDefault();
+
+                    var staffEmailPersonal = staffEmailsHome.Where(x => x.Id.Equals(item.Key)).FirstOrDefault();
+                    if (staffEmailPersonal != null)
+                    {
+                        if (staffEmailPersonal.electronicMailAddress != null) respEmail.Add(new StaffElectronicMailsData { Id = item.Key, electronicMailAddress = staffEmailPersonal.electronicMailAddress, electronicMailTypeDescriptor = "uri://ed-fi.org/ElectronicMailTypeDescriptor#Home/Personal", primaryEmailAddressIndicator = staffEmailPersonal.primaryEmailAddressIndicator });
+                        indicator = staffEmailPersonal.primaryEmailAddressIndicator;
+                    }
+                    var staffEmail = staffEmailsLDAP.Where(x => x.Key.Equals(item.Key)).Select(a => a.Value).FirstOrDefault();
 
                         if (staffEmail != null) respEmail.Add(new StaffElectronicMailsData { Id = item.Key, electronicMailAddress = staffEmail, electronicMailTypeDescriptor = "uri://ed-fi.org/ElectronicMailTypeDescriptor#Work", primaryEmailAddressIndicator = Constants.GetPrimaryIndicator(indicator.ToString()) });
                         UpdateStaffLDAPEmail(respEmail, token);
@@ -396,20 +396,20 @@ namespace BPS.EdOrg.Loader.Controller
         {
             try
             {
-                XmlDocument xmlDoc = _prseXML.LoadXml("StaffAddressEmployee");
-                //var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
-                //nsmgr.AddNamespace("a", "http://ed-fi.org/0220");
-
-                var nodeList = xmlDoc.SelectNodes(@"//InterchangeStaffAddressAssociation/StaffEducationOrganizationAssociation").Cast<XmlNode>().ToList();
-           
-                foreach (XmlNode node in nodeList)
+                
+                var staffDict = new Dictionary<string, List<StaffAddressData>>();
+                // parsing staffAdress attributes from xml file
+                XmlDocument xmlDocSpedsims = _prseXML.LoadXml("StaffAddressEmployee");
+                foreach (XmlNode item in xmlDocSpedsims.SelectNodes(@"//InterchangeStaffAddressAssociation/StaffEducationOrganizationAssociation").Cast<XmlNode>().ToList())
                 {
-                    var id = node.SelectSingleNode(@"StaffAddress/StaffUniqueId").InnerText;
-                    // Extracting the data froom the XMl file
-                    var staffAddressNodeList = GetStaffAddressXml(node);
-                    UpdatingStaffAddressData(token,id, staffAddressNodeList);
-
+                    //Getting data froom the XMl file
+                    var staffAddress = GetStaffAddressXml(item);
+                    var StudentId = item.SelectSingleNode(@"StaffAddress/StaffUniqueId").InnerText;
+                    staffDict.Add(StudentId, staffAddress);
+                    if (!staffDict.ContainsKey(StudentId))
+                        UpdatingStaffAddressData(token, StudentId, staffAddress);
                 }
+
 
                 if (File.Exists(Constants.LOG_FILE))
                     _notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
@@ -421,7 +421,7 @@ namespace BPS.EdOrg.Loader.Controller
 
         }
 
-
+        
 
         /// <summary>
         /// Gets the data from the xml and updates StaffTelephone table for Staff Phone Numbers Cases.
@@ -971,7 +971,7 @@ namespace BPS.EdOrg.Loader.Controller
         }
 
 
-        private void UpdatingStaffAddressData(string token,string staffUniqueId, List<StaffAddressData> staffData)
+        private void UpdatingStaffAddressData(string token, string staffUniqueId, List<StaffAddressData> staffData)
         {
             try
             {
@@ -1051,11 +1051,10 @@ namespace BPS.EdOrg.Loader.Controller
                         else                   
                             
                             _log.Info("The user is disabled through AD : " + userName + " Email : " + email);
-                        
 
-                    staffEmail.Add(userName, email);
-
-
+                    //Adding the staffemail                  
+                         staffEmail.Add(userName, email);
+                                       
                     if (userName.StartsWith("4000") || userName.StartsWith("X0"))
                     {
                         //adding Sponsored Staff to email

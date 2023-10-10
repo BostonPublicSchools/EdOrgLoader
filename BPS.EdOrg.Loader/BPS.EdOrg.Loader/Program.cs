@@ -199,12 +199,9 @@ namespace BPS.EdOrg.Loader
             {
                 
                 staffController = new StaffAssociationController(token, param.Object, Log);
-
-                Log.Info("staff Employment Association Started...");
-                Console.WriteLine("staff Employment Association Started...");
+                Log.Info("staff Employment Association Started...");                
                 staffController.StaffEmploymentAssociationData(token, param.Object);
-                Log.Info("staff Assignment Association Started...");
-                Console.WriteLine("staff Assignment Association Started...");
+                Log.Info("staff Assignment Association Started...");                
                 staffController.StaffAssignmentAssociationData(token, param.Object);
                
             }
@@ -287,7 +284,7 @@ namespace BPS.EdOrg.Loader
         private static void RunIEPFile(CommandLineParser param)
         {
             ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading Edplan to Aspen file
+            //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading from Edplan to Aspen file
             parseXmls.CreateXmlSpedSimsTxt();
             var token = edfiApi.GetAuthToken();
             if (token != null)
