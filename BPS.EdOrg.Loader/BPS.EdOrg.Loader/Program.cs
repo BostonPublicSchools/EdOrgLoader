@@ -47,7 +47,6 @@ namespace BPS.EdOrg.Loader
                     //Creating the xml and executing the file through command line parser   
                     RunDeptFile(param);
                     RunIEPFile(param);
-                    RunJobCodeFile(param);
                     RunAlertFile(param);
                     RunStaffEmail(param);
                     RunStaffContactFile(param);
@@ -290,6 +289,8 @@ namespace BPS.EdOrg.Loader
             if (token != null)
             {
                 StudentSpecialEducationController controller = new StudentSpecialEducationController();
+                studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);                
+                studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
                 studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
                 studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
                 

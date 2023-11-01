@@ -1292,10 +1292,14 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
             {
                 string rootFolderPath = configuration.JobFilePath;                
                 string backupPath = Path.Combine(configuration.XMLOutputPath, "Backup");
-                
-                string[] fileList = Directory.GetFiles(rootFolderPath, Constants.JobFile) ;   // Move Job file for comparison)
-                //fileList = Directory.GetFiles(rootFolderPath, Constants.JobEdPlanTxtFile);  // Archive Txt file
-                //fileList = Directory.GetFiles(ConfigurationManager.AppSettings["XMLExtractedPath"], Constants.JobEdPlanXmlFile); // Archive Xml file
+
+                List<string> fileList = new List<string>();
+
+                fileList.AddRange(Directory.GetFiles(rootFolderPath, Constants.JobFile)); // Move Job file for comparison
+                fileList.AddRange(Directory.GetFiles(rootFolderPath, Constants.JobEdPlanTxtFile)); // Archive Txt file
+                fileList.AddRange(Directory.GetFiles(ConfigurationManager.AppSettings["XMLExtractedPath"], Constants.JobEdPlanXmlFile)) ;// Move Job file for comparison
+
+
 
                 if (!Directory.Exists(backupPath))
                 {
