@@ -48,10 +48,10 @@ namespace BPS.EdOrg.Loader
                     RunDeptFile(param);
                     RunIEPFile(param);
                     RunJobCodeFile(param);
-                    RunAlertFile(param);
                     RunStaffEmail(param);
                     RunStaffContactFile(param);
                     RunStaffAddressFile(param);
+                    RunAlertFile(param);
                     RunTransferCasesFile(param);
                     
 
@@ -215,9 +215,6 @@ namespace BPS.EdOrg.Loader
         {
             try
             {
-                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-                parseXmls.CreateXmlStaffContact();
-
                 var token = edfiApi.GetAuthToken();
                 if (token != null)
                 {
@@ -240,9 +237,6 @@ namespace BPS.EdOrg.Loader
         {
             try
             {
-
-                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-                parseXmls.CreateXmlStaffAddress();
                 var token = edfiApi.GetAuthToken();
                 if (token != null)
                 {

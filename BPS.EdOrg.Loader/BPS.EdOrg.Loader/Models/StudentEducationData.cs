@@ -182,7 +182,19 @@ namespace BPS.EdOrg.Loader.Models
         public Link Link { get; set; }
     }
 
+    public class SchoolReference
+    {
+        public string schoolId { get; set; }
+        public Link Link { get; set; }
+    }
+    public class StudentSchoolAssociation
+    {
+        
+        public string EntryDate { get; set; }
+        public SchoolReference schoolReference { get; set; }
+        public StudentReference studentReference { get; set; }
 
+    }
     public class Disabilities {
         public string disabilityDescriptor { get; set; }
         public int orderOfDisability { get; set; }

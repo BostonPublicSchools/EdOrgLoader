@@ -28,7 +28,7 @@ namespace BPS.EdOrg.Loader.Models
     {
         public StaffEdFiExtension()
         { }
-        public StaffExtension Staff { get; set; }
+        public StaffExtension MyBPS { get; set; }
     }
 
     public class StaffExtension
@@ -110,7 +110,9 @@ namespace BPS.EdOrg.Loader.Models
 
     
 
-   
+
+
+
     public class EdFiEducationReference
     {
         public string educationOrganizationId { get; set; }

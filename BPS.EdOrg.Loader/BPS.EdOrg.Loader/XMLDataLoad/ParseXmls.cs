@@ -196,155 +196,57 @@ namespace BPS.EdOrg.Loader.XMLDataLoad
             }
         }
 
-        public void CreateXmlStaffAddress()
-        {
-            try
-            {
-                string xmlOutPutPath = ConfigurationManager.AppSettings["XMLOutputPath"];
-                string filePath = Path.Combine(xmlOutPutPath, $"StaffAddressEmployee-{DateTime.Now.Date.Month}-{ DateTime.Now.Date.Day}-{ DateTime.Now.Date.Year}.xml");
-                XmlTextWriter writer = new XmlTextWriter(filePath, System.Text.Encoding.UTF8);
-                CreateXmlGenericStart(writer);
-                writer.WriteStartElement("InterchangeStaffAddressAssociation");
-                int numberOfRecordsSkipped = 0;
-                int numberOfRecordsCreatedInXml = 0;
-                List<string> DataStaffAB = new List<string>();
-                string[] DataFilePathStaffAddressEmployees = File.ReadAllLines(_configuration.DataFilePathStaffAddressEmployees);
-                string[] DataFilePathStaffAddressA = File.ReadAllLines(_configuration.DataFilePathStaffAddressA);
-                string[] DataFilePathStaffAddressB = File.ReadAllLines(_configuration.DataFilePathStaffAddressB).Skip(1).ToArray();
+        //public void CreateXmlStaffAddress()
+        //{
+        //    try
+        //    {
+        //        string xmlOutPutPath = ConfigurationManager.AppSettings["XMLOutputPath"];
+        //        string filePath = Path.Combine(xmlOutPutPath, $"StaffAddressEmployee-{DateTime.Now.Date.Month}-{ DateTime.Now.Date.Day}-{ DateTime.Now.Date.Year}.xml");
+        //        XmlTextWriter writer = new XmlTextWriter(filePath, System.Text.Encoding.UTF8);
+        //        CreateXmlGenericStart(writer);
+        //        writer.WriteStartElement("InterchangeStaffAddressAssociation");
+        //        int numberOfRecordsSkipped = 0;
+        //        int numberOfRecordsCreatedInXml = 0;
+        //        List<string> DataStaffAB = new List<string>();
+        //        string[] DataFilePathStaffAddressEmployees = File.ReadAllLines(_configuration.DataFilePathStaffAddressEmployees);
+        //        string[] DataFilePathStaffAddressA = File.ReadAllLines(_configuration.DataFilePathStaffAddressA);
+        //        string[] DataFilePathStaffAddressB = File.ReadAllLines(_configuration.DataFilePathStaffAddressB).Skip(1).ToArray();
 
-                DataStaffAB.AddRange(DataFilePathStaffAddressA.ToList());
-                DataStaffAB.AddRange(DataFilePathStaffAddressB.ToList());
+        //        DataStaffAB.AddRange(DataFilePathStaffAddressA.ToList());
+        //        DataStaffAB.AddRange(DataFilePathStaffAddressB.ToList());
 
-                List<StaffAddressData> staffAddressData = GetStaffAddressDataEmployee(DataFilePathStaffAddressEmployees, writer);
-                List<StaffAddressData> staffAddressDataAB = GetStaffAddressDataEmployeeAB(DataStaffAB, writer);
-                staffAddressData.AddRange(staffAddressDataAB);
+        //        List<StaffAddressData> staffAddressData = GetStaffAddressDataEmployee(DataFilePathStaffAddressEmployees, writer);
+        //        List<StaffAddressData> staffAddressDataAB = GetStaffAddressDataEmployeeAB(DataStaffAB, writer);
+        //        staffAddressData.AddRange(staffAddressDataAB);
 
-                foreach ( var data in staffAddressData)
-                {
-                    _log.Debug($"Creating node for {data.Id}-{data.streetNumberName}-{data.city}-{data.postalCode}");
-                    CreateNodeStaffAddress(data, writer);
-                    numberOfRecordsCreatedInXml++;
-                }
+        //        foreach ( var data in staffAddressData)
+        //        {
+        //            _log.Debug($"Creating node for {data.Id}-{data.streetNumberName}-{data.city}-{data.postalCode}");
+        //            CreateNodeStaffAddress(data, writer);
+        //            numberOfRecordsCreatedInXml++;
+        //        }
                 
-                writer.WriteEndElement();
-                writer.WriteEndDocument();
-                writer.Close();
-                if (numberOfRecordsSkipped > 0)
-                {
-                    _log.Info($"Number Of records created In Xml {numberOfRecordsCreatedInXml}");
-                    _log.Info($"Number of records skipped because crosswalk contains the PeopleSoftIds - {numberOfRecordsSkipped}");
-                }
-                _log.Info("CreateXML ended successfully");
+        //        writer.WriteEndElement();
+        //        writer.WriteEndDocument();
+        //        writer.Close();
+        //        if (numberOfRecordsSkipped > 0)
+        //        {
+        //            _log.Info($"Number Of records created In Xml {numberOfRecordsCreatedInXml}");
+        //            _log.Info($"Number of records skipped because crosswalk contains the PeopleSoftIds - {numberOfRecordsSkipped}");
+        //        }
+        //        _log.Info("CreateXML ended successfully");
 
 
 
-            }
+        //    }
 
-            catch (Exception ex)
-            {
-                _log.Error($"Error while creating Dept XML , Exception: {ex.Message}");
-            }
-        }
+        //    catch (Exception ex)
+        //    {
+        //        _log.Error($"Error while creating Dept XML , Exception: {ex.Message}");
+        //    }
+        //}
 
-        private List<StaffAddressData> GetStaffAddressDataEmployee(string[] DataFilePathStaffAddressEmployees, XmlTextWriter writer)
-        {
-            int i = 0;
-            int staffIdIndex = 0;
-            int staffAddressIndex = 0;            
-            int staffCityIndex = 0;
-            int staffStateIndex = 0;
-            int staffZipIndex = 0;
-            List<StaffAddressData> staffAddressData = new List<StaffAddressData>();
-            StaffAddressData staffAddress = null;
-            foreach (string line in DataFilePathStaffAddressEmployees)
-            {
-                _log.Debug(line);
-                if (i++ == 0)
-                {
-                    string[] header = line.Split('\t');
-                    staffIdIndex = Array.IndexOf(header, "ID");                    
-                    staffAddressIndex = Array.IndexOf(header, "Address 1");
-                    staffCityIndex = Array.IndexOf(header, "City");
-                    staffStateIndex = Array.IndexOf(header, "St");
-                    staffZipIndex = Array.IndexOf(header, "Zip");
-                    if (staffIdIndex < 0 || staffAddressIndex < 0 || staffStateIndex < 0)
-                    {
-                        _log.Error($"Input data text file does not contains the StaffID or StaffAddress");
-                    }
-                    continue;
-                }
-
-                string[] fields = line.Split('\t');
-                if (fields.Length > 0)
-                {
-                    staffAddress = new StaffAddressData
-                    {
-                        Id = fields[staffIdIndex]?.Trim(),                       
-                        streetNumberName = fields[staffAddressIndex]?.Trim(),
-                        city = fields[staffCityIndex]?.Trim(),
-                        stateAbbreviationDescriptor = fields[staffStateIndex]?.Trim(),
-                        postalCode = fields[staffZipIndex]?.Trim()
-                    };
-                    staffAddressData.Add(staffAddress);
-                }
-                
-            }
-            return staffAddressData;
-        }
-
-        private List<StaffAddressData> GetStaffAddressDataEmployeeAB(List<string> DataFilePathStaffAddressEmployees, XmlTextWriter writer)
-        {
-            int i = 0;
-            int staffIdIndex = 0;
-            int AddrType = 0;
-            int staffAddressIndexA = 0;
-            int staffAddressIndexB = 0;
-            int staffCityIndex = 0;
-            int staffStateIndex = 0;
-            int staffZipIndex = 0;
-            List<StaffAddressData> staffAddressData = new List<StaffAddressData>();
-            StaffAddressData staffAddress = null;
-            foreach (string line in DataFilePathStaffAddressEmployees)
-            {
-                _log.Debug(line);
-                if (i++ == 0)
-                {
-                    string[] header = line.Split('\t');
-                    staffIdIndex = Array.IndexOf(header, "ID");
-                    AddrType = Array.IndexOf(header, "Addr Type");
-                    staffAddressIndexA = Array.IndexOf(header, "Address 1");
-                    staffAddressIndexB = Array.IndexOf(header, "Address 2");
-                    staffCityIndex = Array.IndexOf(header, "City");
-                    staffStateIndex = Array.IndexOf(header, "State");
-                    staffZipIndex = Array.IndexOf(header, "Postal");
-                    if (staffIdIndex < 0 || staffAddressIndexA < 0 || staffStateIndex < 0)
-                    {
-                        _log.Error($"Input data text file does not contains the StaffID or StaffAddress");
-                    }
-                    continue;
-                }
-
-                string[] fields = line.Split('\t');
-                if (fields.Length > 0)
-                {
-                    staffAddress = new StaffAddressData
-                    {
-                        Id = fields[staffIdIndex]?.Trim(),
-                        addressTypeDescriptor = fields[AddrType]?.Trim(),
-                        streetNumberName = fields[staffAddressIndexA]+ fields[staffAddressIndexB]?.Trim(),
-                        city = fields[staffCityIndex]?.Trim(),
-                        stateAbbreviationDescriptor = fields[staffStateIndex]?.Trim(),
-                        postalCode = fields[staffZipIndex]?.Trim()
-                    };
-
-                    staffAddressData.Add(staffAddress);
-
-                }
-
-            }
-            return staffAddressData;
-        }
-
+        
         private  void CreateNodeStaffAddress(StaffAddressData staffData, XmlTextWriter writer)
         {
             try

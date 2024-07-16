@@ -259,7 +259,7 @@ namespace BPS.EdOrg.Loader.Controller
                     Directory.CreateDirectory(ConfigurationManager.AppSettings["XMLExtractedPath"]);
 
                 foreach (System.IO.FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
-                 file.Delete();
+                    file.Delete();
                 ZipFile.ExtractToDirectory(ConfigurationManager.AppSettings["XMLDeploymentPath"] + ConfigurationManager.AppSettings["XMLZip"], ConfigurationManager.AppSettings["XMLExtractedPath"]);
 
                 // parsing spedsims attributes from spedSims file
@@ -283,7 +283,7 @@ namespace BPS.EdOrg.Loader.Controller
 
         private void ProcessIEPXml(XmlNodeList nodeList, Dictionary<string, SpedSimsTxt> spedSimsLookup, string token)
         {
-            //var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount * 10 };
+            
             foreach (XmlNode node in nodeList)
             { 
                 // Parsing PCG IEP XML to get IEP data 
@@ -292,7 +292,7 @@ namespace BPS.EdOrg.Loader.Controller
                 // In case of Duplicate Services in Xml the api request is not successfully posted through the api
                 var spEducation = CheckDuplicateServices(spEducationService);
 
-                //Getting Import diabilty desc from sims file
+                //Getting Import disabilty desc from sims file
                 if (spedSimsLookup.TryGetValue(spEducation.studentUniqueId, out SpedSimsTxt studentSped))
                 {
                     spEducation.levelofNeed = Constants.GetLevelOfNeed(studentSped.levelNeedInfo);
@@ -306,6 +306,7 @@ namespace BPS.EdOrg.Loader.Controller
                     // Check if the Program already exists in the ODS if not first enter the Progam.
                     VerifyProgramData(token, spEducation.programEducationOrganizationId, spEducation.programName, spEducation.programTypeDescriptorId);
 
+                    
                     // Insert if SignatureDate, IepBeginDate,IepEndDate is not null
                     if (!string.IsNullOrEmpty(spEducation.beginDate) && !string.IsNullOrEmpty(spEducation.iepBeginDate) && !string.IsNullOrEmpty(spEducation.iepEndDate))
                         InsertIEPStudentSpecialEducation(token, spEducation);
@@ -418,8 +419,8 @@ namespace BPS.EdOrg.Loader.Controller
 
 
 
-            public static IRestResponse VerifyProgramData(string token, string programEdOrgId, string programName, string programType)
-        {
+            public static void VerifyProgramData(string token, string programEdOrgId, string programName, string programType)
+            {
             IRestResponse response = null;
             try
             {
@@ -455,18 +456,19 @@ namespace BPS.EdOrg.Loader.Controller
                     }
                     
                 }
-                return response;
+               
             }
-            catch (Exception ex)
-            {
-                Log.Error("Error getting the program data :" + ex);
-                return null;
+                catch (Exception ex)
+                {
+                    Log.Error("Error getting the program data :" + ex);
+                    
+                }
+
+
             }
 
 
-        }
-
-
+        
 
         private static bool IsSuccessStatusCode(int statusCode)
         {
@@ -968,10 +970,6 @@ namespace BPS.EdOrg.Loader.Controller
                 {
                     string stuId = studentSped.studentReference.studentUniqueId;
                     bool flag = false;
-                    // Getting the DataSource as xml or txt for pcg records
-                    //string dataSource = null;
-                    //if (item._ext != null) dataSource = item._ext.myBPS.dataSource;
-                    //rootObject._ext.myBPS.dataSource = Constants.SetDataSource(dataSource, rootObject._ext.myBPS.dataSource);
                     
                     // Comparing the SourceSystemId in ODS and file
                     string sysSrcId_ODS = studentSped._ext.myBPS.sourceSystemId;

@@ -7,14 +7,12 @@ using System.Configuration;
 using BPS.EdOrg.Loader.ApiClient;
 using Newtonsoft.Json;
 using RestSharp;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using BPS.EdOrg.Loader.Models;
 using BPS.EdOrg.Loader.XMLDataLoad;
 using BPS.EdOrg.Loader.MetaData;
 using BPS.EdOrg.Loader.EdFi.Api;
 using System.DirectoryServices;
-using System.Web;
 using System.DirectoryServices.AccountManagement;
 using System.Text.RegularExpressions;
 using System.Globalization;
@@ -396,21 +394,11 @@ namespace BPS.EdOrg.Loader.Controller
         {
             try
             {
-                
-                var staffDict = new Dictionary<string, List<StaffAddressData>>();
-                // parsing staffAdress attributes from xml file
-                XmlDocument xmlDocSpedsims = _prseXML.LoadXml("StaffAddressEmployee");
-                foreach (XmlNode item in xmlDocSpedsims.SelectNodes(@"//InterchangeStaffAddressAssociation/StaffEducationOrganizationAssociation").Cast<XmlNode>().ToList())
+                Dictionary<string, List<StaffAddressData>> staffDictionary = LoadStaffAddressData(configuration);
+                foreach (string key in staffDictionary.Keys)         
                 {
-                    //Getting data froom the XMl file
-                    var staffAddress = GetStaffAddressXml(item);
-                    var StudentId = item.SelectSingleNode(@"StaffAddress/StaffUniqueId").InnerText;
-                    staffDict.Add(StudentId, staffAddress);
-                    if (!staffDict.ContainsKey(StudentId))
-                        UpdatingStaffAddressData(token, StudentId, staffAddress);
+                    UpdatingStaffAddressData(token, key, staffDictionary[key]);
                 }
-
-
                 if (File.Exists(Constants.LOG_FILE))
                     _notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
             }
@@ -421,7 +409,140 @@ namespace BPS.EdOrg.Loader.Controller
 
         }
 
-        
+        public Dictionary<string, List<StaffAddressData>> LoadStaffAddressData(EdorgConfiguration _configuration)
+        {
+            Dictionary<string, List<StaffAddressData>> dictionary = new Dictionary<string, List<StaffAddressData>>();
+            try
+            {
+                List<string> DataStaffAB = new List<string>();
+                string[] DataFilePathStaffAddressEmployees = File.ReadAllLines(_configuration.DataFilePathStaffAddressEmployees);
+                string[] DataFilePathStaffAddressA = File.ReadAllLines(_configuration.DataFilePathStaffAddressA);
+                string[] DataFilePathStaffAddressB = File.ReadAllLines(_configuration.DataFilePathStaffAddressB).Skip(1).ToArray();
+
+                DataStaffAB.AddRange(DataFilePathStaffAddressA.ToList());
+                DataStaffAB.AddRange(DataFilePathStaffAddressB.ToList());
+
+                List<StaffAddressData> staffAddressData = GetStaffAddressDataEmployee(DataFilePathStaffAddressEmployees);
+                List<StaffAddressData> staffAddressDataAB = GetStaffAddressDataEmployeeAB(DataStaffAB);
+                staffAddressData.AddRange(staffAddressDataAB);
+
+                foreach (var data in staffAddressData)
+                {                  
+                    if (!dictionary.ContainsKey(data.Id))
+                        dictionary.Add(data.Id, new List<StaffAddressData>());
+                    dictionary[data.Id].Add(data);
+                }
+
+                return dictionary;
+
+            }
+
+            catch (Exception ex)
+            {
+                _log.Error($"Error while creating Dept XML , Exception: {ex.Message}");
+                return null;
+            }
+
+        }
+
+        private List<StaffAddressData> GetStaffAddressDataEmployee(string[] DataFilePathStaffAddressEmployees)
+        {
+            int i = 0;
+            int staffIdIndex = 0;
+            int staffAddressIndex = 0;
+            int staffCityIndex = 0;
+            int staffStateIndex = 0;
+            int staffZipIndex = 0;
+            List<StaffAddressData> staffAddressData = new List<StaffAddressData>();
+            StaffAddressData staffAddress = null;
+            foreach (string line in DataFilePathStaffAddressEmployees)
+            {
+                _log.Debug(line);
+                if (i++ == 0)
+                {
+                    string[] header = line.Split('\t');
+                    staffIdIndex = Array.IndexOf(header, "ID");
+                    staffAddressIndex = Array.IndexOf(header, "Address 1");
+                    staffCityIndex = Array.IndexOf(header, "City");
+                    staffStateIndex = Array.IndexOf(header, "St");
+                    staffZipIndex = Array.IndexOf(header, "Zip");
+                    if (staffIdIndex < 0 || staffAddressIndex < 0 || staffStateIndex < 0)
+                    {
+                        _log.Error($"Input data text file does not contains the StaffID or StaffAddress");
+                    }
+                    continue;
+                }
+
+                string[] fields = line.Split('\t');
+                if (fields.Length > 0)
+                {
+                    staffAddress = new StaffAddressData
+                    {
+                        Id = fields[staffIdIndex]?.Trim(),
+                        streetNumberName = fields[staffAddressIndex]?.Trim(),
+                        city = fields[staffCityIndex]?.Trim(),
+                        stateAbbreviationDescriptor = fields[staffStateIndex]?.Trim(),
+                        postalCode = fields[staffZipIndex]?.Trim()
+                    };
+                    staffAddressData.Add(staffAddress);
+                }
+
+            }
+            return staffAddressData;
+        }
+
+        private List<StaffAddressData> GetStaffAddressDataEmployeeAB(List<string> DataFilePathStaffAddressEmployees)
+        {
+            int i = 0;
+            int staffIdIndex = 0;
+            int AddrType = 0;
+            int staffAddressIndexA = 0;
+            int staffAddressIndexB = 0;
+            int staffCityIndex = 0;
+            int staffStateIndex = 0;
+            int staffZipIndex = 0;
+            List<StaffAddressData> staffAddressData = new List<StaffAddressData>();
+            StaffAddressData staffAddress = null;
+            foreach (string line in DataFilePathStaffAddressEmployees)
+            {
+                _log.Debug(line);
+                if (i++ == 0)
+                {
+                    string[] header = line.Split('\t');
+                    staffIdIndex = Array.IndexOf(header, "ID");
+                    AddrType = Array.IndexOf(header, "Addr Type");
+                    staffAddressIndexA = Array.IndexOf(header, "Address 1");
+                    staffAddressIndexB = Array.IndexOf(header, "Address 2");
+                    staffCityIndex = Array.IndexOf(header, "City");
+                    staffStateIndex = Array.IndexOf(header, "State");
+                    staffZipIndex = Array.IndexOf(header, "Postal");
+                    if (staffIdIndex < 0 || staffAddressIndexA < 0 || staffStateIndex < 0)
+                    {
+                        _log.Error($"Input data text file does not contains the StaffID or StaffAddress");
+                    }
+                    continue;
+                }
+
+                string[] fields = line.Split('\t');
+                if (fields.Length > 0)
+                {
+                    staffAddress = new StaffAddressData
+                    {
+                        Id = fields[staffIdIndex]?.Trim(),
+                        addressTypeDescriptor = fields[AddrType]?.Trim(),
+                        streetNumberName = fields[staffAddressIndexA] + fields[staffAddressIndexB]?.Trim(),
+                        city = fields[staffCityIndex]?.Trim(),
+                        stateAbbreviationDescriptor = fields[staffStateIndex]?.Trim(),
+                        postalCode = fields[staffZipIndex]?.Trim()
+                    };
+
+                    staffAddressData.Add(staffAddress);
+
+                }
+
+            }
+            return staffAddressData;
+        }
 
         /// <summary>
         /// Gets the data from the xml and updates StaffTelephone table for Staff Phone Numbers Cases.
@@ -431,37 +552,92 @@ namespace BPS.EdOrg.Loader.Controller
         {
             try
             {
-                XmlDocument xmlDoc = _prseXML.LoadXml("StaffContacts");
-                //var nsmgr = new XmlNamespaceManager(xmlDoc.NameTable);
-                //nsmgr.AddNamespace("a", "http://ed-fi.org/0220");
-                
-                var nodeList = xmlDoc.SelectNodes(@"//InterchangeStaffAssociation/StaffEducationOrganizationAssociation").Cast<XmlNode>();
-                
-                foreach (XmlNode node in nodeList)
+                Dictionary<string, List<StaffContactData>> dictionary = LoadStaffContact(configuration);
+                foreach (string key in dictionary.Keys)
                 {
-                    var id = node.SelectSingleNode(@"ContactDetails/StaffUniqueId").InnerText;
-                    List<StaffContactData> ContactNodeList = new List<StaffContactData>();                    
-                    // Multiple contact numbers for same staffId
-                    var dups = xmlDoc.SelectNodes(@"//InterchangeStaffAssociation/StaffEducationOrganizationAssociation/ContactDetails/StaffUniqueId").Cast<XmlNode>().Where(a => a.InnerText == id).Select(x=>x.ParentNode.ParentNode).ToList();
-               
-                    foreach (var item in dups)
-                    {
-                        var staffContact = GetStaffContactXml(item);
-                        ContactNodeList.Add(staffContact);
-                    }
-                    UpdatingStaffContactData(token, id, ContactNodeList);                   
+                    UpdatingStaffContactData(token, key, dictionary[key]);
+                }                    
 
-                }
-                
-                if (File.Exists(Constants.LOG_FILE))
-                    _notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
+                if (!File.Exists(Constants.LOG_FILE))                    
+                _notification.SendMail(Constants.LOG_FILE_REC, Constants.LOG_FILE_SUB, Constants.LOG_FILE_BODY, Constants.LOG_FILE_ATT);
             }
             catch (Exception ex)
             {
-                _log.Error(ex.Message);
+                _log.Error((object)ex.Message);
             }
-
         }
+
+
+        public Dictionary<string, List<StaffContactData>> LoadStaffContact(EdorgConfiguration _configuration)
+        {
+            try
+            {
+                Dictionary<string, List<StaffContactData>> dictionary = new Dictionary<string, List<StaffContactData>>();
+
+                string dataFilePath = _configuration.DataFilePathStaffPhoneNumbers;
+                string[] lines = File.ReadAllLines(dataFilePath);
+                int i = 0; int extIndex = 0; int phoneIndex = 0;
+                int preferredIndex = 0; int empIdIndex = 0; int typeIndex = 0;
+                foreach (string line in lines)
+                {
+                    _log.Debug(line);
+                    if (i++ == 0)
+                    {
+                        string[] header = line.Split('\t');
+                        empIdIndex = Array.IndexOf(header, "ID");
+                        phoneIndex = Array.IndexOf(header, "Phone");
+                        typeIndex = Array.IndexOf(header, "Type");
+                        extIndex = Array.IndexOf(header, "Ext");
+                        preferredIndex = Array.IndexOf(header, "Preferred");
+                        if (empIdIndex < 0)
+                        {
+                            _log.Error($"Input data text file does not contains the ID or JobCode or ActionDt headers");
+                        }
+                        continue;
+                    }
+
+                    string[] fields = line.Split('\t');
+                    if (fields.Length > 0)
+                    {
+                        var staffContactData = new StaffContactData
+                        {
+                            Id = fields[empIdIndex]?.Trim(),
+                            telephoneNumber = fields[phoneIndex]?.Trim(),
+                            telephoneNumberTypeDescriptor = fields[typeIndex]?.Trim(),
+                            ext = fields[extIndex]?.Trim(),
+                            orderOfPriority = fields[preferredIndex]?.Trim(),
+                            textMessageCapabilityIndicator = true
+                        };
+
+
+                        _log.Debug($"Creating node for {staffContactData.Id}-{staffContactData.telephoneNumber}-{staffContactData.telephoneNumberTypeDescriptor}");
+                        if (!string.IsNullOrEmpty(staffContactData.telephoneNumberTypeDescriptor))
+                        {
+                            var telPhoneType = Constants.GetTelephoneType(staffContactData.telephoneNumberTypeDescriptor);
+                            staffContactData.telephoneNumberTypeDescriptor = telPhoneType;
+                        }
+                        if (!string.IsNullOrEmpty(staffContactData.telephoneNumberTypeDescriptor))
+                        {
+                            var preNum = Constants.GetPreferredNumber(staffContactData.orderOfPriority);
+                            staffContactData.orderOfPriority = preNum;
+                        }
+                        if (!dictionary.ContainsKey(staffContactData.Id))
+                            dictionary.Add(staffContactData.Id, new List<StaffContactData>());
+                        dictionary[staffContactData.Id].Add(staffContactData);
+
+                    }
+                }
+                return dictionary;
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Error while in StaffContact XMl , Exception: {ex.Message}");
+                return null;
+            }
+            
+        }
+
+        
 
         /// <summary>
         /// Gets the data from the xml and updates StaffEducationOrganizationAssignmentAssociation table for Transfer Cases.
@@ -886,7 +1062,7 @@ namespace BPS.EdOrg.Loader.Controller
                         },
                         _ext = new StaffEdFiExtension()
                         {
-                            Staff = new StaffExtension()
+                            MyBPS = new StaffExtension()
                             {
                                 unionCode = staffNodeList.staff.unionCode
                             }
@@ -957,8 +1133,7 @@ namespace BPS.EdOrg.Loader.Controller
 
                     }
 
-                }
-                
+                }            
 
           
             }
@@ -1049,13 +1224,12 @@ namespace BPS.EdOrg.Loader.Controller
                             _log.Info("The user is enabled  through AD : " + userName + " Email : " + email);
                         }
                         else                   
-                            
                             _log.Info("The user is disabled through AD : " + userName + " Email : " + email);
+                    
+                        //Adding the staffemail                  
+                        staffEmail.Add(userName, email);
 
-                    //Adding the staffemail                  
-                         staffEmail.Add(userName, email);
-                                       
-                    if (userName.StartsWith("4000") || userName.StartsWith("X0"))
+                    if (userName.StartsWith("4000") || userName.StartsWith("X0"))                    
                     {
                         //adding Sponsored Staff to email
                         var SponsoredStaff = new SponsoredStaff()
@@ -1332,7 +1506,7 @@ namespace BPS.EdOrg.Loader.Controller
             DateTime maxValue = DateTime.MinValue;
             IRestResponse response = null;
 
-            var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.staffUniqueId1 + staffUniqueId+Constants.SpecEduEducationOrganizationId + schoolId+ Constants.GetEmpStatusDescp(empDesc)+ empDesc);
+            var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.staffUniqueId1 + staffUniqueId+ Constants.GetEmpStatusDescp(empDesc)+ empDesc);
             response = _edfiApi.GetData(client, token);
             if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
             {
