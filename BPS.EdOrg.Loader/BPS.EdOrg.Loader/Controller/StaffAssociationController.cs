@@ -167,7 +167,7 @@ namespace BPS.EdOrg.Loader.Controller
                             staffAssignmentNodeList.EndDateValue = endDate.Split()[0];
                         else staffAssignmentNodeList.EndDateValue = endDate;
 
-                        UpdateEndDate(token,staffAssignmentNodeList);
+                        UpdateEndDate(token, schoolid,staffAssignmentNodeList);
                     }
 
                 }
@@ -1922,7 +1922,7 @@ namespace BPS.EdOrg.Loader.Controller
         /// Updates the enddate to [StaffEducationOrganizationEmploymentAssociation] table.
         /// </summary>
         /// <returns></returns>
-        private void UpdateEndDate(string token, StaffAssignmentAssociationData staffData)
+        private void UpdateEndDate(string token,string schoolId, StaffAssignmentAssociationData staffData)
         {
 
             try
@@ -1961,9 +1961,9 @@ namespace BPS.EdOrg.Loader.Controller
 
                             hireDate = staffData.HireDateValue,
                             endDate = staffData.EndDateValue,
-                            department = item.department
+                            department = GetDepartmentName(staffData.StaffUniqueIdValue, schoolId, staffData.EmpDesc, token)
 
-                        };
+                    };
 
                         string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
                         response = _edfiApi.PutData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrl + "/" + item.id), token);
