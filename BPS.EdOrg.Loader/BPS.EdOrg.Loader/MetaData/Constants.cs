@@ -10,13 +10,14 @@ namespace BPS.EdOrg.Loader
     class Constants
     {
         public static string JobFile = @"R0100156_JOB_W_ORIGHIRDT.txt";
-        public static string JobEdPlanTxtFile = @"EdPlanToAspen"+ DateTime.Now.ToString("_MMddyyyy_")+".txt";
-        public static string JobEdPlanXmlFile = @"EdPlanToAspen"+DateTime.Now.ToString("_MMddyyyy_")+".txt";
+        public static string JobEdPlanTxtFile = @"EdPlanToAspen.txt";
+        public static string JobEdPlanXmlFile = @"R137!maboston!0-26-19-079949!4-5-22.xml";
         public static string educationOrganizationId = @"?educationOrganizationId=";
         public static string SpecEduEducationOrganizationId = @"&educationOrganizationId=";
         public static string educationServiceCenterId = @"?educationServiceCenterId=";
         public static string educationOrganizationIdValue = @"350000";
-        public static string educationOrganizationIdValueCentralStaff = @"9035";        
+        public static string educationOrganizationIdValueCentralStaff = @"9035";
+        public static string StaffClassificationDefaultValue = @"Other";
         public static string employmentStatusDescriptorValue = @"Tenured%20or%20permanent";
         public static string staffClassificationDescriptorId = @"&StaffClassificationDescriptor="+StaffClassificationDescriptor;
         public static string orderofAssignment = "&orderofAssignment=";
@@ -58,6 +59,12 @@ namespace BPS.EdOrg.Loader
         public static string OperationalStatusActive = "uri://ed-fi.org/OperationalStatusDescriptor#Active";
         public static string OperationalStatusInactive = "uri://ed-fi.org/OperationalStatusDescriptor#Inactive";
         public static string Active = "Active";
+        public static string PrimaryJobOrderAssignment = "1";
+        // PCG file  flags
+        public static bool ShouldExecuteIEPLoad { get; set; } = bool.Parse(ConfigurationManager.AppSettings["ShouldExecuteIEPLoad"]);
+        public static bool ShouldExecuteAlertLoad { get; set; } = bool.Parse(ConfigurationManager.AppSettings["ShouldExecuteAlertLoad"]);
+
+        public static bool ShouldExecutStaffLoad { get; set; } = bool.Parse(ConfigurationManager.AppSettings["ShouldExecutStaffLoad"]);
         public static string LOG_FILE { get; set; } = ConfigurationManager.AppSettings["LogFileDrive"] + DateTime.Today.ToString("yyyyMMdd") + ".csv";
         public static string LOG_FILE_ATT { get; set; } = @"Log File";
         public static string EmailFromAddress = ConfigurationManager.AppSettings["EmailFromAddr"];
@@ -80,6 +87,7 @@ namespace BPS.EdOrg.Loader
         public static string SchoolUrl { get; set; } = @"ed-fi/schools";
         public static string API_SpecialEdServiceDescriptor { get; set; } = @"ed-fi/specialEducationSettingDescriptors";
         public static string StaffAssociationUrl { get; set; } = @"ed-fi/staffSchoolAssociations";
+        public static string StaffEmploymentUrlLimit { get; set; } = @"ed-fi/staffEducationOrganizationEmploymentAssociations?limit=1000";
         public static string DataSourceXml { get; set; } = @"In Xml";
 
         public static string OutofBoundValue { get; set; } = "-1";
@@ -102,6 +110,12 @@ namespace BPS.EdOrg.Loader
                 return "In Txt";
         }
 
+        //Gets current DateTime
+
+        public static string GetCurrentDate()
+        {
+            return DateTime.Now.ToString("MM/dd/yyyy");
+        }
 
         //GetSchoolID based on EducationOrgID
         public static string GetSchooId( string schoolId)

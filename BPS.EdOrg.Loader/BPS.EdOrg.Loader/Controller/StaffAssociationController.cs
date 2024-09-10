@@ -16,6 +16,7 @@ using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Net;
 
 namespace BPS.EdOrg.Loader.Controller
 {
@@ -145,21 +146,38 @@ namespace BPS.EdOrg.Loader.Controller
 
         }
 
+        //Updating records in Assignment Association
+        public void UpdateStaffAssignmentAssociationData(string token, string schoolid, string staffUniqueIdValue, string hireDateValue, string empDesc)
+        {
+            
+            string beginDate = Constants.GetCurrentDate();
+            if (!string.IsNullOrEmpty(schoolid))
+            {
+                //Inserting new Assignments with default values to be updated by IIQ
+                if (!string.IsNullOrEmpty(staffUniqueIdValue) && !string.IsNullOrEmpty(beginDate) && !string.IsNullOrEmpty(hireDateValue))
+                {
+                   UpdateAssignmentAssociationData(token, staffUniqueIdValue,schoolid, hireDateValue, beginDate, empDesc);                   
+
+                }
+               
+            }
+        }
+
         // updating the values in Assignment Association
         private void UpdateStaffAssignmentAssociationData(string token, string schoolid, StaffAssignmentAssociationData staffAssignmentNodeList )
         {
             string endDate = null;
             if (!string.IsNullOrEmpty(schoolid))
             {
-                //Inserting new Assignments and updating the postioTitle with JobCode - JobDesc
+                //Inserting new Assignments and updating the postioTitle with JobCode -JobDesc
                 if (!string.IsNullOrEmpty(staffAssignmentNodeList.StaffUniqueIdValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.BeginDateValue) && !string.IsNullOrEmpty(staffAssignmentNodeList.StaffClassification) && !string.IsNullOrEmpty(staffAssignmentNodeList.PositionCodeDescription) && !string.IsNullOrEmpty(staffAssignmentNodeList.HireDateValue))
                 {
                     string id = GetAssignmentAssociationId(token, schoolid, staffAssignmentNodeList);
-                                         
+
                     if (id != null)
                     {
-                        UpdateAssignmentAssociation(token, id, schoolid, staffAssignmentNodeList);                     
-                        
+                        UpdateAssignmentAssociation(token, id, schoolid, staffAssignmentNodeList);
+
                         endDate = GetAssignmentEndDate(token, staffAssignmentNodeList.StaffUniqueIdValue, staffAssignmentNodeList.EmpDesc, Constants.StaffAssignmentUrl);
 
                         //Setting the Enddate with the one from AssignmentAssociation
@@ -167,12 +185,12 @@ namespace BPS.EdOrg.Loader.Controller
                             staffAssignmentNodeList.EndDateValue = endDate.Split()[0];
                         else staffAssignmentNodeList.EndDateValue = endDate;
 
-                        UpdateEndDate(token, schoolid,staffAssignmentNodeList);
+                        UpdateEndDate(token, schoolid, staffAssignmentNodeList);
                     }
 
                 }
-                //Update StaffSchoolAssociation for staff schools                                    
-                UpdateStaffSchoolAssociation(token, schoolid, staffAssignmentNodeList.EmpDesc, staffAssignmentNodeList.StaffUniqueIdValue, Constants.StaffAssignmentUrl);
+                //Update StaffSchoolAssociation for staff schools
+                UpdateStaffSchoolAssociation(token, schoolid, staffAssignmentNodeList.EmpDesc, staffAssignmentNodeList.StaffUniqueIdValue);
             }
         }
 
@@ -226,11 +244,112 @@ namespace BPS.EdOrg.Loader.Controller
 
 
         /// <summary>
-        /// Gets the data from the xml and updates StaffEducationOrganizationAssignmentAssociation table.
+        /// Inserts data from IIQ as source to StaffAssociation tables in ODS.
         /// </summary>
         /// <returns></returns>
-        public void StaffAssignmentAssociationData(string token, EdorgConfiguration configuration)
+        public void UpdateStaffAssociation(string token, EdorgConfiguration configuration)
         {
+            try {
+                var schoolDeptids = GetDeptList(configuration);
+                string schoolid = null;
+                string DeptId = null;
+
+                Dictionary<string, StaffEmploymentDescriptor> staffEmployments = null;
+                
+                // Get records from Employment as source for the data is IIQ
+                staffEmployments = GetEmploymentAssociationData(token);
+
+                if (staffEmployments != null && staffEmployments.Any())
+                {
+                    foreach (var items in staffEmployments)
+                    {
+                        if (items.Value.department.Contains("-"))
+                            DeptId = items.Value.department.Substring(0, items.Value.department.IndexOf("-")).Trim();
+                        else DeptId = items.Value.department;
+                        
+                        // Getting the EdOrgId for the Department ID 
+                        var educationOrganizationId = schoolDeptids.Where(x => x.DeptId.Equals(DeptId) && x.OperationalStatus.Equals(Constants.OperationalStatusActive)).FirstOrDefault();
+
+                        // setting the DeptId as EdOrgId for the staff, if no corresponding school is found
+                        if (educationOrganizationId != null)
+                            schoolid = educationOrganizationId.SchoolId;
+                        else schoolid = DeptId;
+
+                        // Insert into StaffAssignmentAssociation 
+                            UpdateStaffAssignmentAssociationData(token, schoolid, items.Key, items.Value.hireDate, items.Value.employmentStatusDescriptor);
+
+                        //Update StaffSchoolAssociation for staff schools                        
+                            UpdateStaffSchoolAssociation(token, schoolid, items.Value.employmentStatusDescriptor, items.Key);
+                        
+
+
+                    }
+
+                }
+                
+            }
+            catch(Exception ex) {
+                _log.Error(ex.Message);
+            }
+        }
+
+
+        public Dictionary<string, StaffEmploymentDescriptor> GetEmploymentAssociationData(string token)
+        {
+            var lookup = new Dictionary<string, StaffEmploymentDescriptor>();
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        int offset = 0, limit = 1000;
+                        bool hasRecords = true;
+                        while (hasRecords)
+                        {
+                            var client = offset == 0 ? new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrlLimit)
+                                               : new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffEmploymentUrlLimit + "&offset=" + offset);
+
+
+                            var response = _edfiApi.GetData(client, token);
+                            offset += limit;
+                            if (response.StatusCode != HttpStatusCode.OK)
+                            {
+                            _log.Error($"Unable to StaffEmployment from {client.BaseUrl}");
+                            }
+                            else
+                            {
+                                var data = JsonConvert.DeserializeObject<List<StaffEmploymentDescriptor>>(response.Content);
+                                foreach (var item in data)
+                                {
+
+                                    if (!lookup.ContainsKey(item.staffReference.staffUniqueId))
+                                        lookup.Add(item.staffReference.staffUniqueId, item);
+                                }
+                            }
+                            if (response.Content.Length <= 2)
+                            {
+                                hasRecords = false;
+
+                            }
+                        }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex.Message);
+                }
+                return lookup;
+            }
+
+            
+
+            /// <summary>
+            /// Gets the data from the xml and updates StaffEducationOrganizationAssignmentAssociation table.
+            /// </summary>
+            /// <returns></returns>
+            public void StaffAssignmentAssociationData(string token, EdorgConfiguration configuration)
+            {
             try
             {
                 XmlDocument xmlDoc = _prseXML.LoadXml("StaffAssociation");
@@ -1740,6 +1859,81 @@ namespace BPS.EdOrg.Loader.Controller
             }
             return null;
         }
+
+        /// <summary>
+        /// Insert into the [StaffEducationOrganizationAssignmentAssociation] table.
+        /// </summary>
+        /// <returns></returns>
+        private string UpdateAssignmentAssociationData(string token, string staffId, string educationOrganizationId, string hireDate, string beginDate, string empDesc)
+        {
+            
+            IRestResponse response = null;
+            try
+            {
+                string StaffClassificationDescriptorField = Constants.StaffClassificationDefaultValue;
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssignmentUrl + Constants.educationOrganizationId + educationOrganizationId + Constants.beginDate + beginDate + Constants.staffUniqueId + staffId + Constants.StaffClassificationDescriptor1 + StaffClassificationDescriptorField);
+                response = _edfiApi.GetData(client, token);
+                if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
+                {
+                    if (response.Content.Length <= 2)
+                    {  
+                        //Inserts Data in as new record in assignment with default values
+                        var rootObject = new StaffAssignmentDescriptor
+                        {
+
+                            EducationOrganizationReference = new EdFiEducationReference
+                            {
+                                educationOrganizationId = educationOrganizationId,
+                                Link = new Link()
+                                {
+                                    Rel = string.Empty,
+                                    Href = string.Empty
+                                }
+                            },
+                            StaffReference = new EdFiStaffReference
+                            {
+                                staffUniqueId = staffId,
+
+                                Link = new Link
+                                {
+                                    Rel = string.Empty,
+                                    Href = string.Empty
+                                }
+                            },
+                            EmploymentStaffEducationOrganizationEmploymentAssociationReference = new EdfiEmploymentAssociationReference
+                            {
+                                educationOrganizationId = Constants.educationOrganizationIdValue,
+                                staffUniqueId = staffId,
+                                employmentStatusDescriptor = empDesc,
+                                hireDate = hireDate,
+                                Link = new Link
+                                {
+                                    Rel = string.Empty,
+                                    Href = string.Empty
+                                }
+                            },
+
+                            StaffClassificationDescriptor = Constants.StaffClassificationDescriptorField + StaffClassificationDescriptorField,
+                            BeginDate = beginDate,
+                            //EndDate = staffData.EndDateValue,
+                            OrderOfAssignment = Constants.PrimaryJobOrderAssignment,
+                            //PositionTitle = staffData.PositionCodeDescription
+                        };
+
+                        string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
+                        response = _edfiApi.PostData(json, client, token);
+                        _log.Info("Updating  StaffEducationOrganizationAssignmentAssociation for Staff Id : " + staffId);
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(" Error updating  StaffEducationOrganizationAssignmentAssociation for Staff Id : " + staffId + ex.Message);
+
+            }
+            return null;
+        }
         /// <summary>
         /// Get the Id from the [StaffEducationOrganizationAssignmentAssociation] table.
         /// </summary>
@@ -1986,15 +2180,12 @@ namespace BPS.EdOrg.Loader.Controller
         }
 
 
-        private void UpdateStaffSchoolAssociation(string token, string schoolId,string empDesc, string StaffUniqueIdValue, string url)
+        private void UpdateStaffSchoolAssociation(string token, string schoolId,string empDesc, string StaffUniqueIdValue)
         {
             
             IRestResponse response = null;
             try
             {
-                //var endDate = GetAssignmentEndDate(token, StaffUniqueIdValue, empDesc, schoolId,url);
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssociationUrl +Constants.schoolId1 + Constants.GetSchooId(schoolId) + Constants.staffUniqueId + StaffUniqueIdValue);
-                response = _edfiApi.GetData(client, token);
                 var rootObject = new StaffSchoolAssociation
                 {
                     SchoolReference = new EdFiSchoolReference
@@ -2028,35 +2219,30 @@ namespace BPS.EdOrg.Loader.Controller
                     },
                     ProgramAssignmentDescriptor = Constants.ProgramAssignmentDescriptorField,
                 };
-
-                if (_restServiceManager.IsSuccessStatusCode((int)response.StatusCode))
+                string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
+                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssociationUrl+ Constants.staffUniqueId1+ StaffUniqueIdValue);
                 {
-                   
-                    string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
-                    if (response.Content.Length <= 2)
-                    {
-                        response = _edfiApi.PostData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssociationUrl), token);
-                        _log.Info("Inserting edfi.StaffAssociation for Schoolid : " + schoolId);
-                    }
-                        
-                    else
-                    {
-                        var data = JsonConvert.DeserializeObject<List<StaffAssociationReference>>(response.Content);
-                        foreach(var item in data)
+                    
+                        response = _edfiApi.GetData(client, token);
+                        if (response.Content.Length <= 2)
                         {
-                            var id = item.id;
-                            response = _edfiApi.PutData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssociationUrl + "/" + id), token);
-                            _log.Info("Updating  edfi.StaffAssociation for Schoolid : " + schoolId);
+                            response = _edfiApi.PostData(json, client, token);
+                            _log.Info("Inserting edfi.StaffAssociation for Schoolid : " + schoolId);
                         }
-                        
-                       
-                        
-                    }
-                       
-                }
-               
-                }
-            
+
+                        else
+                        {
+                            var data = JsonConvert.DeserializeObject<List<StaffAssociationReference>>(response.Content);
+                            foreach (var item in data)
+                            {
+                                var id = item.id;
+                                response = _edfiApi.PutData(json, new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StaffAssociationUrl + "/" + id), token);
+                                _log.Info("Updating  edfi.StaffAssociation for Schoolid : " + schoolId);
+                            }
+                        }                    
+                }     
+  
+            }            
             catch (Exception ex)
             {
                 _log.Error("Error updating  edfi.StaffAssociation for Schoolid : " + schoolId + " Exception : " + ex.Message);

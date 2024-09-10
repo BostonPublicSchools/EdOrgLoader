@@ -44,26 +44,17 @@ namespace BPS.EdOrg.Loader
                     parseXmls = new ParseXmls(param.Object, Log);                    
                     LogConfiguration(param.Object);
 
-                    //Creating the xml and executing the file through command line parser   
-                    RunDeptFile(param);
-                    RunIEPFile(param);
+                    //StaffAssociation data loaded to to ODS
                     RunJobCodeFile(param);
-                    RunStaffEmail(param);
-                    RunStaffContactFile(param);
-                    RunStaffAddressFile(param);
-                    RunAlertFile(param);
-                    RunTransferCasesFile(param);
-                    
 
+                    //Running IEP & Alert files files from PCG
+                    RunIEPFile(param);
+                    RunAlertFile(param);
+                   
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex.Message);
-                }
-                finally
-                {
-                    //Archiving the file for comarison 
-                    parseXmls.Archive(param.Object);
                 }
                 
                 Log.Info("Job completed");
@@ -187,28 +178,20 @@ namespace BPS.EdOrg.Loader
 
         private static void RunJobCodeFile(CommandLineParser param)
         {
-
-            // For JobCode_tbl.txt
-            //List<string> existingStaffId = GetStaffList(param.Object);
-            ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            parseXmls.CreateXmlJob();
-
-            var token = edfiApi.GetAuthToken();
-            Log.Info("token retrieved" + token);
-            if (token != null)
+            if (Constants.ShouldExecutStaffLoad)
             {
-                
-                staffController = new StaffAssociationController(token, param.Object, Log);
-                Log.Info("staff Employment Association Started...");                
-                staffController.StaffEmploymentAssociationData(token, param.Object);
-                Log.Info("staff Assignment Association Started...");                
-                staffController.StaffAssignmentAssociationData(token, param.Object);
-               
+                var token = edfiApi.GetAuthToken();
+                Log.Info("token retrieved" + token);
+                if (token != null)
+                {
+                    staffController = new StaffAssociationController(token, param.Object, Log);
+                    Log.Info("staff Association load Started...");
+                    staffController.UpdateStaffAssociation(token, param.Object);
+
+                }
+                else Log.Error("Token is not generated, ODS not updated");
             }
-
-            else Log.Error("Token is not generated, ODS not updated");
-
-
+            
         }
 
         private static void RunStaffContactFile(CommandLineParser param)
@@ -277,34 +260,39 @@ namespace BPS.EdOrg.Loader
         }
         private static void RunIEPFile(CommandLineParser param)
         {
-            ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-            //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading from Edplan to Aspen file
-            parseXmls.CreateXmlSpedSimsTxt();
-            var token = edfiApi.GetAuthToken();
-            if (token != null)
+            if (Constants.ShouldExecuteIEPLoad)
             {
-                StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
-                studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
-                
-               
-            }
-            else Log.Error("Token is not generated, ODS not updated");
+                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
+                //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading from Edplan to Aspen file
+                parseXmls.CreateXmlSpedSimsTxt();
+                var token = edfiApi.GetAuthToken();
+                if (token != null)
+                {
+                    StudentSpecialEducationController controller = new StudentSpecialEducationController();
+                    studentSpecController.UpdateIEPSpecialEducationProgramAssociationData(token, parseXmls);
+                    studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
 
+
+                }
+                else Log.Error("Token is not generated, ODS not updated");
+            }
         }
 
         private static void RunAlertFile(CommandLineParser param)
         {
-            ParseXmls parseXmls = new ParseXmls(param.Object, Log);            
-            var token = edfiApi.GetAuthToken();
-            if (token != null)
+            if (Constants.ShouldExecuteAlertLoad)
             {
-                StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
-                studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
+                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
+                var token = edfiApi.GetAuthToken();
+                if (token != null)
+                {
+                    StudentSpecialEducationController controller = new StudentSpecialEducationController();
+                    studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
+                    studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
 
-            }
-            else Log.Error("Token is not generated, ODS not updated");
+                }
+                else Log.Error("Token is not generated, ODS not updated");
+            }         
 
         }
 
