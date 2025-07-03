@@ -1,0 +1,5 @@
+C:\Workspace\BostonPublicSchool\EdPlanLoaderCore\obj\Debug\net5.0\EdPlanLoaderCore.csproj.AssemblyReference.cache
+C:\Workspace\BostonPublicSchool\EdPlanLoaderCore\obj\Debug\net5.0\EdPlanLoaderCore.GeneratedMSBuildEditorConfig.editorconfig
+C:\Workspace\BostonPublicSchool\EdPlanLoaderCore\obj\Debug\net5.0\EdPlanLoaderCore.AssemblyInfoInputs.cache
+C:\Workspace\BostonPublicSchool\EdPlanLoaderCore\obj\Debug\net5.0\EdPlanLoaderCore.AssemblyInfo.cs
+C:\Workspace\BostonPublicSchool\EdPlanLoaderCore\obj\Debug\net5.0\EdPlanLoaderCore.csproj.CoreCompileInputs.cache
