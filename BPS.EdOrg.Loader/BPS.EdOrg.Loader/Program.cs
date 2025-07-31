@@ -7,8 +7,6 @@ using BPS.EdOrg.Loader.MetaData;
 using BPS.EdOrg.Loader.EdFi.Api;
 using BPS.EdOrg.Loader.Controller;
 
-using System.Threading.Tasks;
-
 namespace BPS.EdOrg.Loader
 {
     class Program
@@ -45,8 +43,7 @@ namespace BPS.EdOrg.Loader
                     LogConfiguration(param.Object);
 
                     //StaffAssociation data loaded to to ODS
-                    RunJobCodeFile(param);
-
+                     RunJobCodeFile(param);
                     //Running IEP & Alert files files from PCG
                     RunIEPFile(param);
                     RunAlertFile(param);
@@ -88,52 +85,8 @@ namespace BPS.EdOrg.Loader
             Log.Info($"Xsd Folder:  {configuration.XsdFolder}");
             Log.Info($"InterchangeOrder Folder:  {configuration.InterchangeOrderFolder}");
         }
-        private static void LoadXml(EdorgConfiguration configuration)
-        {
-            try
-            {
-                Log.Info($"Started executing EdFi.ApiLoader.Console from path :{configuration.ApiLoaderExePath}");
-                Process.EnableRaisingEvents = true;
-                Process.OutputDataReceived += new System.Diagnostics.DataReceivedEventHandler(process_OutputDataReceived);
-                Process.ErrorDataReceived += new System.Diagnostics.DataReceivedEventHandler(process_ErrorDataReceived);
-                Process.Exited += new System.EventHandler(process_Exited);
-                Process.StartInfo.FileName = configuration.ApiLoaderExePath;
-                Process.StartInfo.Arguments = GetArguments(configuration);
-                Process.StartInfo.UseShellExecute = false;
-                Process.StartInfo.RedirectStandardError = true;
-                Process.StartInfo.RedirectStandardOutput = true;
-                Process.Start();
-                Process.BeginErrorReadLine();
-                Process.BeginOutputReadLine();
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Exception while executing EdFi.ApiLoader.Console : {ex.Message}");
-            }
-        }
-        private static string GetArguments(EdorgConfiguration configuration)
-        {
-            StringBuilder argumentBuilder = new StringBuilder();
-            try
-            {
-                argumentBuilder.Append($"/a {configuration.ApiUrl} ");
-                argumentBuilder.Append($"/d {configuration.XMLOutputPath} ");
-                argumentBuilder.Append($"/v {configuration.JobFilePath} ");
-                argumentBuilder.Append($"/k {configuration.OauthKey} ");
-                argumentBuilder.Append($"/s {configuration.OauthSecret} ");
-                argumentBuilder.Append($"/m {configuration.MetadataUrl} ");
-                argumentBuilder.Append($"/o {configuration.OauthUrl} ");
-                argumentBuilder.Append($"/x {configuration.XsdFolder} ");
-                argumentBuilder.Append($"/i {configuration.InterchangeOrderFolder} ");
-                argumentBuilder.Append($"/w {configuration.WorkingFolder} ");
-                argumentBuilder.Append($"/y {configuration.SchoolYear}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"Error in parsing arguments :{ex.Message}");
-            }
-            return argumentBuilder.ToString();
-        }
+        
+        
         private static void process_Exited(object sender, EventArgs e)
         {
             Log.Info($"process exited with code {Process.ExitCode.ToString()}");
@@ -178,7 +131,7 @@ namespace BPS.EdOrg.Loader
 
         private static void RunJobCodeFile(CommandLineParser param)
         {
-            if (Constants.ShouldExecutStaffLoad)
+            if (Constants.ShouldExecuteStaffLoad)
             {
                 var token = edfiApi.GetAuthToken();
                 Log.Info("token retrieved" + token);
@@ -191,8 +144,10 @@ namespace BPS.EdOrg.Loader
                 }
                 else Log.Error("Token is not generated, ODS not updated");
             }
-            
+               
         }
+            
+        
 
         private static void RunStaffContactFile(CommandLineParser param)
         {
@@ -263,8 +218,8 @@ namespace BPS.EdOrg.Loader
             if (Constants.ShouldExecuteIEPLoad)
             {
                 ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-                //parseXmls.CreateXmlEdPlanToAspenTxt(); Not reading from Edplan to Aspen file
-                parseXmls.CreateXmlSpedSimsTxt();
+                //parseXmls.CreateXmlEdPlanToAspenTxt(); //Not reading from Edplan to Aspen file
+                //parseXmls.CreateXmlSpedSimsTxt();
                 var token = edfiApi.GetAuthToken();
                 if (token != null)
                 {

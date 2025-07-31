@@ -1,0 +1,12 @@
+# Include any files or directories that you don't want to be copied to your
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.env
+*.yaml
+*.config
+secrets.json

@@ -1,21 +1,28 @@
-﻿using log4net;
+﻿using BPS.EdPlanLoaderCore.Controller;
+using BPS.EdPlanLoaderCore.EdFi.Api;
+using BPS.EdPlanLoaderCore.MetaData;
+using BPS.EdPlanLoaderCore.Models;
+using BPS.EdPlanLoaderCore.XMLDataLoad;
+using log4net;
+using log4net.Config;
+using log4net.Repository;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Diagnostics;
-using BPS.EdPlanLoaderCore.Controller;
-using BPS.EdPlanLoaderCore.EdFi.Api;
-using Microsoft.CodeAnalysis;
-using BPS.EdPlanLoaderCore.MetaData;
+using System.IO;
+using System.Reflection;
 using CommandLineParser = BPS.EdPlanLoaderCore.MetaData.CommandLineParser;
-using BPS.EdPlanLoaderCore.XMLDataLoad;
 
 namespace EdPlanLoaderCore
 {
-    class Program
+    
+class Program
     {
-        private static readonly Process Process = new Process();
-        private static readonly ILog Log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static EdFiApiCrud edfiApi = new EdFiApiCrud();
-        private static StudentSpecialEducationController studentSpecController = new StudentSpecialEducationController();
+        
+        private static EdFiApiCrud edfiApi;
+        private static StudentSpecialEducationController studentSpecController;
+        private static readonly ILog logger = LogManager.GetLogger(typeof(Program));
 
         /// <summary>
         /// Entry point of the application. Parses command line arguments, validates them,
@@ -25,10 +32,27 @@ namespace EdPlanLoaderCore
         /// <param name="args">Command line arguments provided to the application.</param>
         static void Main(string[] args)
         {
+            // Configure log4net
+            ILoggerRepository repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            XmlConfigurator.Configure(repository, new FileInfo("log4net.config"));           
+            logger.Info("Inside Main");
+
+            // Build configuration with user secrets
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration.AddUserSecrets<Program>();
+
+            // Set the config in the static class
+            AppSettings.Configuration = builder.Configuration;            
+            
+            // Initialize static fields
+            edfiApi = new EdFiApiCrud(AppSettings.Configuration);
+            studentSpecController = new StudentSpecialEducationController();
+
+            // Parse command line arguments
             var parameter = new CommandLineParser();
             parameter.SetupHelp("?", "Help").Callback(text =>
             {
-                System.Console.WriteLine(text);
+                Console.WriteLine(text);
                 Environment.Exit(0);
             });
 
@@ -36,113 +60,88 @@ namespace EdPlanLoaderCore
 
             if (result.HasErrors)
             {
-                System.Console.Write(result.ErrorText);
-                System.Console.Write(parameter.Object.ErrorText);
+                Console.Write(result.ErrorText);
+                Console.Write(parameter.Object.ErrorText);
+                return;
             }
-            else
+
+            try
             {
-                try
-                {
-                    LogConfiguration(parameter.Object);
-                    // Execute core logic: run IEP and Alert file processing.
+                LogConfiguration(parameter.Object);
+                if(AppSettings.Configuration.GetValue<bool>("AppSettings:ShouldExecuteIEPLoad"))
                     RunIEPFile(parameter);
+                if (AppSettings.Configuration.GetValue<bool>("AppSettings:ShouldExecuteAlertLoad"))
                     RunAlertFile(parameter);
-
-                }
-                catch (Exception ex)
-                {
-                    // Log any exceptions that occur during processing.
-                    Log.Error(ex.Message);
-                }
-
-                // Log successful completion of the job.
-                Log.Info("Job completed");
+                logger.Info("Job completed");
+                
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.ToString());                
             }
         }
 
         /// <summary>
         /// Logs the current configuration values for diagnostic and auditing purposes.        
         /// </summary>
-        /// <param name="configuration">
+        /// <param name="configuration"></param>
         private static void LogConfiguration(EdorgConfiguration configuration)
         {
-            Log.Info($"Api Url: {configuration.ApiUrl}");                        
-            Log.Info($"School Year: {configuration.SchoolYear}");           
-            Log.Info($"Metadata Url:    {configuration.MetadataUrl}");
-            Log.Info($"Data Folder: {configuration.XMLOutputPath}");
-            Log.Info($"JobFilePath Folder: {configuration.JobFilePath}");
-            Log.Info($"Input Data Text File Path:   {configuration.DataFilePath}");            
-            Log.Info($"Input Data Text File Path DataFilePathEdPlantoApen:   {configuration.DataFilePathEdPlantoApen}");
-            Log.Info($"Input Data Text File Path DataFilePathSpedSims:   {configuration.DataFilePathSpedSims}");            
-            Log.Info($"Working Folder: {configuration.WorkingFolder}");
-            Log.Info($"Xsd Folder:  {configuration.XsdFolder}");
-            Log.Info($"InterchangeOrder Folder:  {configuration.InterchangeOrderFolder}");
+            logger.Info($"Api Url: {configuration.ApiUrl}");
+            logger.Info($"Input Data Text File Path DataFilePathEdPlantoApen: {configuration.DataFilePathEdPlantoApen}");
+            logger.Info($"Input Data Text File Path DataFilePathSpedSims: {configuration.DataFilePathSpedSims}");
+            logger.Info($"Xsd Folder: {configuration.XsdFolder}");
+           
         }
 
-        // <summary>
-        /// Processes the IEP file if enabled by configuration.
-        /// Parses XML input, retrieves authentication token, and updates special education program data in the ODS.
-        /// Logs errors if authentication fails.
-        /// </summary>
-        /// <param name="param">The command line parser containing parsed arguments and options.</param>
         private static void RunIEPFile(CommandLineParser param)
         {
-            // Check if the configuration flag to execute IEP Load is set to true
-            if (Constants.ShouldExecuteIEPLoad)
-            {
-                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-
-                // Attempt to get an authentication token from the edfiApi
+           
+            ParseXmls parseXmls = new ParseXmls(param.Object, logger);
                 var token = edfiApi.GetAuthToken();
 
-                // If a token is successfully retrieved, proceed with file processing
-                if (token != null)
+                if (!string.IsNullOrEmpty(token))
                 {
-                    StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                    // Update IEP Special Education Program Association data 
-                    studentSpecController.UpdateIEPSpecialEducationProgramAssociationDataAsync(token, parseXmls);
-                    // Update the end date for the IEPs 
-                    studentSpecController.UpdateEndDateSpecialEducation(Constants.specialEdProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInIEPXml(parseXmls));
-
-
+                    // Use the same controller instance for all calls
+                    var controller = new StudentSpecialEducationController();
+                    controller.UpdateIEPSpecialEducationProgramAssociationDataAsync(token, parseXmls);
+                    controller.UpdateEndDateSpecialEducation(
+                        Constants.specialEdProgramTypeDescriptor,
+                        token,
+                        parseXmls,
+                        controller.GetStudentsInIEPXml(parseXmls)
+                    );
                 }
-                // Log an error if the authentication token could not be retrieved
-                else Log.Error("Token is not generated, ODS not updated");
+                else
+                {
+                logger.Error("Token is not generated, ODS not updated");
+                }
             }
-        }
+        
 
-
-        /// <summary>
-        /// Processes the Alert file if enabled by configuration.
-        /// Parses XML input, retrieves authentication token, and updates alert special education data in the ODS.
-        /// Logs an error if authentication fails.
-        /// </summary>
-        /// <param name="param">The command line parser containing parsed arguments and options.</param>
         private static void RunAlertFile(CommandLineParser param)
         {
-            // Check if the configuration flag to execute Alert Load is set to true
-            if (Constants.ShouldExecuteAlertLoad)
-            {
-                ParseXmls parseXmls = new ParseXmls(param.Object, Log);
-
-                // Attempt to get an authentication token from the edfiApi
+            
+                ParseXmls parseXmls = new ParseXmls(param.Object, logger);
                 var token = edfiApi.GetAuthToken();
 
-                // If a token is successfully retrieved, proceed with file processing
-                if (token != null)
+                if (!string.IsNullOrEmpty(token))
                 {
-                    StudentSpecialEducationController controller = new StudentSpecialEducationController();
-                    // Update Alert Special Education data
-                    studentSpecController.UpdateAlertSpecialEducationData(token, parseXmls);
-                    // Update the end date for alert programs
-                    studentSpecController.UpdateEndDateSpecialEducation(Constants.alertProgramTypeDescriptor, token, parseXmls, controller.GetStudentsInAlertXml(parseXmls));
-
+                    // Use the same controller instance for all calls
+                    var controller = new StudentSpecialEducationController();
+                    controller.UpdateAlertSpecialEducationData(token, parseXmls);
+                    controller.UpdateEndDateSpecialEducation(
+                        Constants.alertProgramTypeDescriptor,
+                        token,
+                        parseXmls,
+                        controller.GetStudentsInAlertXml(parseXmls)
+                    );
                 }
-                // Log an error if the authentication token could not be retrieved
-                else Log.Error("Token is not generated, ODS not updated");
+                else
+                {
+                logger.Error("Token is not generated, ODS not updated");
+                }
             }
-
         }
-
     }
-}
+

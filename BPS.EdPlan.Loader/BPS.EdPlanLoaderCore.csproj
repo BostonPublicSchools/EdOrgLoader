@@ -5,14 +5,29 @@
     <TargetFramework>net8.0</TargetFramework>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <UserSecretsId>2521d41b-e744-42aa-b57a-b1380b7b5bb4</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
+ 
+  
+
+  
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="MetaData\log4net.config">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+    <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="4.0.0.14" />
-    <PackageReference Include="AWSSDK.S3" Version="4.0.4" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.2" />
     <PackageReference Include="FluentCommandLineParser" Version="1.4.3" />
     <PackageReference Include="log4net" Version="3.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.14.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="3.12.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.11.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RestSharp" Version="106.15.0" />

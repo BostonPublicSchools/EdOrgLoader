@@ -1,20 +1,26 @@
-﻿using System.Configuration;
+﻿using EdPlanLoaderCore;
 using EdPlanLoaderCore.ApiClient;
+using Microsoft.Extensions.Configuration;
 using RestSharp;
-using System.Net;
-using System.Security.Authentication;
 
 namespace BPS.EdPlanLoaderCore.EdFi.Api
 {
     class EdFiApiCrud
     {
+        private readonly IConfiguration _configuration;
+
+        public EdFiApiCrud(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         /// <summary>
         /// A method within TokenRetriever that performs the actual token retrieval and returns it as a string
         /// </summary>
         /// <returns>token as string</returns>
         public string GetAuthToken()
         {
-            var tokenRetriever = new TokenRetriever(ConfigurationManager.AppSettings["OAuthUrl"], ConfigurationManager.AppSettings["APP_Key"], ConfigurationManager.AppSettings["APP_Secret"]);
+           var tokenRetriever = new TokenRetriever(_configuration["OAuthUrl"], _configuration["APP_Key"], _configuration["APP_Secret"]);
             var token = tokenRetriever.ObtainNewBearerToken();
             return token;
         }

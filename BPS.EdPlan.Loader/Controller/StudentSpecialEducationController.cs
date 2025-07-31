@@ -1,33 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
-using System.IO.Compression;
-using BPS.EdPlanLoaderCore.XMLDataLoad;
-using System.Xml;
-using System.Xml.Linq;
-using log4net;
+﻿using BPS.EdPlanLoaderCore.EdFi.Api;
 using BPS.EdPlanLoaderCore.MetaData;
 using BPS.EdPlanLoaderCore.Models;
-using System.Globalization;
-using System.Linq;
-using RestSharp;
-using BPS.EdPlanLoaderCore.EdFi.Api;
+using BPS.EdPlanLoaderCore.XMLDataLoad;
+using EdPlanLoaderCore;
+using log4net;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using RestSharp;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
+using ConfigManager = System.Configuration;
+
+
 
 namespace BPS.EdPlanLoaderCore.Controller
 {
     
     class StudentSpecialEducationController
     {
+        private static IConfigurationBuilder builder = new ConfigurationBuilder().AddUserSecrets<StudentSpecialEducationController>();
+        private static IConfiguration configuration = builder.Build();
+        private static EdFiApiCrud edfiApi = new EdFiApiCrud(configuration);        
         private static Notification notification;
-        private static readonly ILog Log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static EdFiApiCrud edfiApi = new EdFiApiCrud();
+        private static readonly ILog Log = LogManager.GetLogger(typeof(Program));
         Dictionary<Tuple<string, string>, EdFiStudentSpecialEducation> _CACHE_SPED_IEP_LOOKUP = null;
 
-
+        
         /// <summary>
         /// Processes the 504 alert XML, updating or inserting SpecialEducation data in the ODS as appropriate,
         /// and sends a notification email if any errors are logged.
@@ -39,7 +43,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             try
             {
                 // Read and clean the 504 alert XML file
-                var fragments = File.ReadAllText(ConfigurationManager.AppSettings["XMLDeploymentPath"] + "/504inXML.xml")
+                var fragments = File.ReadAllText(ConfigManager.ConfigurationManager.AppSettings["XMLDeploymentPath"] + "/504inXML.xml")
                                     .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
                 var doc = XDocument.Parse(fragments);
                 XmlDocument xmlDoc = prseXMl.ToXmlDocument(doc);
@@ -106,15 +110,16 @@ namespace BPS.EdPlanLoaderCore.Controller
             {
                 var rootObject = GetAlertSpecialEducation(token, spList);
                 string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
-                Console.WriteLine("Inside Alert SpecialED");
+                
 
                 // Construct the ODS GET URL for checking existing records
                 var client = new RestClient(
-                    ConfigurationManager.AppSettings["ApiUrl"] +
+                     AppSettings.Configuration["AppSettings:ApiUrl"] +
                     Constants.StudentSpecialEducation +
                     Constants.studentUniqueId + spList.StudentUniqueId +
                     "&programName=504 Plan" +
                     Constants.beginDate + spList.IepSignatureDate);
+                
 
                 response = edfiApi.GetData(client, token);
                 var original = JsonConvert.DeserializeObject<List<EdFiStudentSpecialEducation>>(response.Content);
@@ -151,7 +156,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                                         if (needsUpdate)
                                         {
                                             var updateResponse = edfiApi.DeleteData(
-                                                new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
+                                                new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
                                                 token);
                                             if (IsSuccessStatusCode((int)updateResponse.StatusCode))
                                                 updateResponse = edfiApi.PostData(json, client, token);
@@ -195,8 +200,8 @@ namespace BPS.EdPlanLoaderCore.Controller
         {
             try
             {
-                string endDate = null;
-                Dictionary<string, UpdateEndDateStudent> studentSpecialEducations = null;
+                string endDate = null;               
+                List<UpdateEndDateStudent> studentSpecialEducations = null;
 
                 // Retrieve Special Education program associations from ODS
                 studentSpecialEducations = GetStudentSpecialEducation(specialEdPlan, token);
@@ -207,30 +212,29 @@ namespace BPS.EdPlanLoaderCore.Controller
                     {
                         // Set EndDate for students no longer found in the IEP list and whose EndDate is still null
                         var studentsNotInXml = studentSpecialEducations
-                            .Where(t2 => studentsIEP.All(t1 => !t2.Value.studentReference.studentUniqueId.Equals(t1)) && (t2.Value.EndDate == null))
-                            .ToList();
+                        .Where(t2 => !studentsIEP.Contains(t2.studentReference.studentUniqueId) && string.IsNullOrEmpty(t2.EndDate))
+                        .ToList();
 
                         foreach (var item in studentsNotInXml)
                         {
-                            endDate = DateTime.Now.ToString();
-                            if (!string.IsNullOrEmpty(endDate))
-                                item.Value.EndDate = endDate.Split()[0]; // Only take the date part
-                            SetEndDate(specialEdPlan, token, item.Value);
+                            endDate = DateTime.Now.ToString("yyyy-MM-dd"); // Use ISO date format
+                            item.EndDate = endDate;
+                            SetEndDate(specialEdPlan, token, item);
                         }
 
                         // Set EndDate for students with multiple records in ODS
-                        var studentsInXml = studentSpecialEducations
-                            .GroupBy(t1 => t1)
-                            .Where(t2 => t2.Count() > 1)
-                            .Select(t3 => t3.Key)
-                            .ToList();
+                        var studentsInXml = studentSpecialEducations.Where(s => s.EndDate == null)
+                        .GroupBy(s => s.studentReference.studentUniqueId)
+                        .Where(g => g.Count() > 1)
+                        .SelectMany(g => g)
+                        .ToList();
 
                         foreach (var item in studentsInXml)
                         {
-                            endDate = GetEndDateProgramAssociation(specialEdPlan, token, item.Value);
+                            endDate = GetEndDateProgramAssociation(specialEdPlan, token, item);
                             if (!string.IsNullOrEmpty(endDate))
-                                item.Value.EndDate = endDate.Split()[0];
-                            SetEndDate(specialEdPlan, token, item.Value);
+                                item.EndDate = endDate; // Already in yyyy-MM-dd format
+                            SetEndDate(specialEdPlan, token, item);
                         }
                     }
                 }
@@ -258,7 +262,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             try
             {
                 // Build REST client with the correct API URL and parameters
-                var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] +
+                var client = new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] +
                                            Constants.StudentSpecialEducation +
                                            Constants.studentUniqueId +
                                            spList.studentReference.studentUniqueId +
@@ -328,7 +332,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             {
                 // Build the API endpoint for retrieving the student's record(s)
                 var client = new RestClient(
-                    ConfigurationManager.AppSettings["ApiUrl"] +
+                     AppSettings.Configuration["AppSettings:ApiUrl"] +
                     Constants.StudentSpecialEducation +
                     Constants.studentUniqueId +
                     spItem.studentReference.studentUniqueId +
@@ -359,7 +363,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                         // PUT the updated record back to ODS
                         var resp = edfiApi.PutData(
                             json,
-                            new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
+                            new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
                             token);
 
                         Log.Info("updating enddate to student iep " + spItem.studentReference.studentUniqueId);
@@ -380,10 +384,9 @@ namespace BPS.EdPlanLoaderCore.Controller
         /// <returns>
         /// A dictionary where the key is the student's unique ID and the value is the associated UpdateEndDateStudent object.
         /// </returns>
-        private Dictionary<string, UpdateEndDateStudent> GetStudentSpecialEducation(string specialEdPlan, string token)
+        private List<UpdateEndDateStudent> GetStudentSpecialEducation(string specialEdPlan, string token)
         {
-            var lookup = new Dictionary<string, UpdateEndDateStudent>();
-
+            var lookup = new List<UpdateEndDateStudent>();
             try
             {
                 if (!string.IsNullOrEmpty(token))
@@ -393,9 +396,8 @@ namespace BPS.EdPlanLoaderCore.Controller
                     while (hasRecords)
                     {
                         // Construct the client URL, using offset for pagination after the first batch
-                        var client = offset == 0
-                            ? new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducationLimit + specialEdPlan)
-                            : new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducationLimit + specialEdPlan + "&offset=" + offset);
+                        var client = 
+                             new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducationLimit + specialEdPlan + "&offset=" + offset + "&limit=" + limit);
 
                         // Request the current batch from the ODS API
                         var response = edfiApi.GetData(client, token);
@@ -409,11 +411,8 @@ namespace BPS.EdPlanLoaderCore.Controller
                         {
                             // Deserialize the batch and add new students to the dictionary
                             var data = JsonConvert.DeserializeObject<List<UpdateEndDateStudent>>(response.Content);
-                            foreach (var item in data)
-                            {
-                                if (!lookup.ContainsKey(item.studentReference.studentUniqueId))
-                                    lookup.Add(item.studentReference.studentUniqueId, item);
-                            }
+                            lookup.AddRange(data);
+                            
                         }
 
                         // If the response is empty (e.g., "[]"), stop fetching
@@ -429,6 +428,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                 Log.Error(ex.Message);
             }
 
+            
             return lookup;
         }
 
@@ -444,40 +444,28 @@ namespace BPS.EdPlanLoaderCore.Controller
             try
             {
                 //-- TODO S3 Bucket                
-                //S3Helper s3Helper = new S3Helper("your-access-key", "your-secret-key", "us-east-1");
-                //await s3Helper.ListAndDownloadFilesAsync(Constants.bucket, Constants.prefix, Constants.directory);
+                S3Helper s3Helper = new S3Helper("your-access-key", "your-secret-key", "us-east-1");
+                await s3Helper.ListAndDownloadFilesAsync(Constants.bucket, Constants.prefix, Constants.directory);
 
                 // Ensure the extracted XML directory exists and is clean
-                string extractedPath = ConfigurationManager.AppSettings["XMLExtractedPath"];
+                string extractedPath = ConfigManager.ConfigurationManager.AppSettings["XMLExtractedPath"];
 
                 if (!Directory.Exists(extractedPath))
                     Directory.CreateDirectory(extractedPath);
                 
                 // Delete all existing files in the extracted directory
-                foreach (System.IO.FileInfo file in new DirectoryInfo(extractedPath).GetFiles())
-                    file.Delete();
+                //foreach (System.IO.FileInfo file in new DirectoryInfo(extractedPath).GetFiles())
+                //    file.Delete();
 
                 // Extract the deployment ZIP to the extracted directory
-                string deploymentZipPath = ConfigurationManager.AppSettings["XMLDeploymentPath"] + ConfigurationManager.AppSettings["XMLZip"];
-                ZipFile.ExtractToDirectory(deploymentZipPath, extractedPath);
+                //string deploymentZipPath = ConfigManager.ConfigurationManager.AppSettings["XMLDeploymentPath"] + ConfigManager.ConfigurationManager.AppSettings["XMLZip"];
+                //ZipFile.ExtractToDirectory(deploymentZipPath, extractedPath);
 
                 // Process each extracted XML file
                 foreach (FileInfo file in new DirectoryInfo(extractedPath).GetFiles())
                 {
-                    // Clean up XML and correct any problematic characters
-                    var fragments = File.ReadAllText(file.FullName)
-                        .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "")
-                        .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "")
-                        .Replace("&", "&amp;");
-
-                    // Convert string to XmlDocument
-                    XmlDocument xmlDoc = prseXMl.ToXmlDocument(XDocument.Parse(fragments));
-
-                    // Select all <iep> nodes under <root>
-                    XmlNodeList nodeList = xmlDoc.SelectNodes("//root/iep");
-
                     // Process each IEP node
-                    ProcessIEPXml(nodeList, token);
+                    ProcessIEPXml(file,prseXMl, token);
                 }
             }
             catch (Exception ex)
@@ -498,7 +486,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             try
             {
                 // Iterate over each file in the extracted XML directory
-                foreach (FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
+                foreach (FileInfo file in new DirectoryInfo(ConfigManager.ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
                 {
                     // Clean up the XML string and escape ampersands
                     var fragments = File.ReadAllText(file.FullName)
@@ -531,8 +519,19 @@ namespace BPS.EdPlanLoaderCore.Controller
         /// Processes the data from the parsed xml and updates IEP data to ODS studentSpecialEducationProgramAssociations endpoint.
         /// </summary>
         /// <returns></returns>
-        private void ProcessIEPXml(XmlNodeList nodeList, string token)
+        private void ProcessIEPXml(FileInfo file,ParseXmls prseXMl, string token)
         {
+
+            // Clean up XML and correct any problematic characters
+            var fragments = File.ReadAllText(file.FullName)
+            .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "")
+            .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "")
+            .Replace("&", "&amp;");
+            // Convert string to XmlDocument
+            XmlDocument xmlDoc = prseXMl.ToXmlDocument(XDocument.Parse(fragments));
+
+            // Select all <iep> nodes under <root>
+            XmlNodeList nodeList = xmlDoc.SelectNodes("//root/iep");
 
             foreach (XmlNode node in nodeList)
             {
@@ -584,7 +583,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             {
                 StudentSpecialEducationProgramAssociation spEducation = new StudentSpecialEducationProgramAssociation();
                 spEducation.relatedServices = new List<Service>();
-                if (!String.IsNullOrEmpty(node.SelectSingleNode("iepUniqueId").InnerText))
+                if (!System.String.IsNullOrEmpty(node.SelectSingleNode("iepUniqueId").InnerText))
                     spEducation.iepUniqueId = node.SelectSingleNode("iepUniqueId").InnerText.ToString() ?? null;
                 XmlNode EducationOrgNode = node.SelectSingleNode("educationOrganizationReference");
                 if (EducationOrgNode != null)
@@ -596,11 +595,11 @@ namespace BPS.EdPlanLoaderCore.Controller
                 if (ProgramNode != null)
                 {
                     spEducation.programEducationOrganizationId = ProgramNode.SelectSingleNode("educationOrganizationId").InnerText ?? null;
-                    if (String.IsNullOrEmpty(spEducation.programEducationOrganizationId))
+                    if (System.String.IsNullOrEmpty(spEducation.programEducationOrganizationId))
                         spEducation.programEducationOrganizationId = Constants.educationOrganizationIdValue;
                     spEducation.programTypeDescriptorId = ProgramNode.SelectSingleNode("type").InnerText.ToString() ?? null;
                     spEducation.programName = ProgramNode.SelectSingleNode("name").InnerText.ToString() ?? null;
-                    if (String.IsNullOrEmpty(spEducation.programName)) spEducation.programName = Constants.ProgramName;
+                    if (System.String.IsNullOrEmpty(spEducation.programName)) spEducation.programName = Constants.ProgramName;
                 }
                 XmlNode studentNode = node.SelectSingleNode("studentReference");
                 if (studentNode != null)
@@ -685,8 +684,8 @@ namespace BPS.EdPlanLoaderCore.Controller
                             }
                         }
                     };
-                    if (!String.IsNullOrEmpty(relatedService.SpecialEducationProgramServiceDescriptor))
-                        if (String.IsNullOrEmpty(relatedService._ext.myBPS.serviceDuration))
+                    if (!System.String.IsNullOrEmpty(relatedService.SpecialEducationProgramServiceDescriptor))
+                        if (System.String.IsNullOrEmpty(relatedService._ext.myBPS.serviceDuration))
                             relatedService._ext.myBPS.serviceDuration = "0.0000";
                     spEducation.relatedServices.Add(relatedService);
 
@@ -775,12 +774,12 @@ namespace BPS.EdPlanLoaderCore.Controller
             {
                 // Build the REST client with the appropriate API URL and parameters
                 var client = new RestClient(
-                    ConfigurationManager.AppSettings["ApiUrl"] +
+                     AppSettings.Configuration["AppSettings:ApiUrl"] +
                     Constants.API_Program +
                     Constants.educationOrganizationId + programEdOrgId +
                     Constants.programName + programName +
                     Constants.programType + programType);
-
+                var apiurl = AppSettings.Configuration["AppSettings:OAuthUrl"];
                 // Execute GET to check if the program exists
                 response = edfiApi.GetData(client, token);
 
@@ -808,7 +807,7 @@ namespace BPS.EdPlanLoaderCore.Controller
 
                         string json = JsonConvert.SerializeObject(rootObject, Newtonsoft.Json.Formatting.Indented);
                         response = edfiApi.PostData(json,
-                            new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.API_Program),
+                            new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.API_Program),
                             token);
 
                         Log.Info("Verify if the program data exists in EdFi Program for programTypeId: " + programType);
@@ -835,7 +834,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                 IRestResponse response = null;
                 // Prepare the record to be sent to ODS
                 var rootObject = GetSpecialEducation(token, spEducation);
-                var httpClient = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation);
+                var httpClient = new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation);
                 // Memory cache lookup for existing StudentSpecialEducationProgramAssociation records
                 var stuSpeEdIEPData = GetStudentSpecialEducation_IEP(token);
 
@@ -873,9 +872,9 @@ namespace BPS.EdPlanLoaderCore.Controller
                                     {
                                         // Delete the old record
                                         response = edfiApi.DeleteData(
-                                            new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + studentSped.id),
+                                            new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation + "/" + studentSped.id),
                                             token);
-
+                                        
                                         // Insert the new record
                                         if (IsSuccessStatusCode((int)response.StatusCode))
                                             response = edfiApi.PostData(json, httpClient, token);
@@ -928,7 +927,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             {
                 IRestResponse response = null;
                 var client = new RestClient(
-                    ConfigurationManager.AppSettings["ApiUrl"] +
+                     AppSettings.Configuration["AppSettings:ApiUrl"] +
                     Constants.StudentSpecialEducation +
                     "?studentUniqueId=" + spEducation.studentUniqueId +
                     Constants.programType + spEducation.programTypeDescriptorId);
@@ -956,7 +955,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                                         {
                                             response = edfiApi.PutData(
                                                 json,
-                                                new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
+                                                new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
                                                 token);
                                         }
                                     }
@@ -1192,8 +1191,8 @@ namespace BPS.EdPlanLoaderCore.Controller
                     {
                         // Compose the API client for paginated retrieval
                         var client = offset == 0
-                            ? new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducationLimit + Constants.specialEdProgramTypeDescriptor)
-                            : new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducationLimit + Constants.specialEdProgramTypeDescriptor + "&offset=" + offset);
+                            ? new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducationLimit + Constants.specialEdProgramTypeDescriptor)
+                            : new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducationLimit + Constants.specialEdProgramTypeDescriptor + "&offset=" + offset);
 
                         var response = edfiApi.GetData(client, _accessToken);
                         offset += limit;
@@ -1252,7 +1251,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                 IRestResponse response = null;
                 // Build API client for fetching student special education records by studentUniqueId
                 var client = new RestClient(
-                    ConfigurationManager.AppSettings["ApiUrl"] +
+                     AppSettings.Configuration["AppSettings:ApiUrl"] +
                     Constants.StudentSpecialEducation +
                     "?studentUniqueId=" + spEducation.StudentUniqueId);
 
@@ -1278,7 +1277,7 @@ namespace BPS.EdPlanLoaderCore.Controller
                                     {
                                         response = edfiApi.PutData(
                                             json,
-                                            new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
+                                            new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.StudentSpecialEducation + "/" + id),
                                             token);
                                     }
                                     if ((int)response.StatusCode > 204 || (int)response.StatusCode < 200)
@@ -1459,10 +1458,10 @@ namespace BPS.EdPlanLoaderCore.Controller
             try
             {
                 // Iterate through all files in the extracted XML directory
-                foreach (FileInfo file in new DirectoryInfo(ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
+                foreach (FileInfo file in new DirectoryInfo(ConfigManager.ConfigurationManager.AppSettings["XMLExtractedPath"]).GetFiles())
                 {
                     // Read and clean the XML file (removing the XML declaration)
-                    var fragments = File.ReadAllText(ConfigurationManager.AppSettings["XMLDeploymentPath"] + "/504inXML.xml")
+                    var fragments = File.ReadAllText(ConfigManager.ConfigurationManager.AppSettings["XMLDeploymentPath"] + "/504inXML.xml")
                                         .Replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "");
                     var doc = XDocument.Parse(fragments);
 
@@ -1512,7 +1511,7 @@ namespace BPS.EdPlanLoaderCore.Controller
             IRestResponse response = null;
 
             // Prepare REST client for Service Descriptor endpoint
-            var client = new RestClient(ConfigurationManager.AppSettings["ApiUrl"] + Constants.API_ProgramServiceDescriptor);
+            var client = new RestClient(AppSettings.Configuration["AppSettings:ApiUrl"] + Constants.API_ProgramServiceDescriptor);
 
             // Construct the descriptor object, truncating fields to fit Ed-Fi limits
             var rootObject = new ServiceDescriptor

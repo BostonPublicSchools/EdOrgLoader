@@ -43,44 +43,6 @@ namespace EdPlanLoaderCore.ApiClient
             return GetBearerToken(oauthClient);
         }
 
-        /// <summary>
-        /// Retrieves an OAuth access code by sending an authorization request to the OAuth server.
-        /// </summary>
-        /// <param name="oauthClient">The OAuth REST client used to send the request.</param>
-        /// <returns>The access code as a string.</returns>
-        /// <exception cref="AuthenticationException">
-        /// Thrown if the authorization code cannot be retrieved due to a non-OK status code or an error in the response.
-        /// </exception>
-        private string GetAccessCode(IRestClient oauthClient)
-        {
-            // Create a new POST request to the "oauth/authorize" endpoint
-            var accessCodeRequest = new RestRequest("oauth/authorize", Method.POST);
-
-            // Add required parameters for the OAuth authorization request
-            accessCodeRequest.AddParameter("Client_id", clientKey);
-            accessCodeRequest.AddParameter("Response_type", "code");
-
-            // Execute the request and obtain the response, deserializing into AccessCodeResponse
-            var accessCodeResponse = oauthClient.Execute<AccessCodeResponse>(accessCodeRequest);
-
-            // Throw an exception if the response status is not OK
-            if (accessCodeResponse.StatusCode != HttpStatusCode.OK)
-            {
-                throw new AuthenticationException("Unable to retrieve an authorization code. Error message: " +
-                                                  accessCodeResponse.ErrorMessage);
-            }
-
-            // Throw an exception if the response contains an error
-            if (accessCodeResponse.Data.Error != null)
-            {
-                throw new AuthenticationException(
-                    "Unable to retrieve an authorization code. Please verify that your application key is correct. Alternately, the service address may not be correct: " +
-                    oauthUrl);
-            }
-            // Return the access code from the response data
-            return accessCodeResponse.Data.Code;
-        }
-
         // <summary>
         /// Retrieves a bearer (access) token from the OAuth server using client credentials.
         /// </summary>

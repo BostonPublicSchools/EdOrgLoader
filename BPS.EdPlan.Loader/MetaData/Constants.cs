@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BPS.EdPlanLoaderCore.MetaData
 {
@@ -12,63 +7,29 @@ namespace BPS.EdPlanLoaderCore.MetaData
     /// </summary>
     class Constants
     {
-        public static string educationOrganizationId = @"?educationOrganizationId=";
-        public static string SpecEduEducationOrganizationId = @"&educationOrganizationId=";
-        public static string educationServiceCenterId = @"?educationServiceCenterId=";
+
+        public static string educationOrganizationId = @"?educationOrganizationId=";      
         public static string educationOrganizationIdValue = @"350000";
         public static string educationOrganizationIdValueCentralStaff = @"9035";
         public static string StaffClassificationDefaultValue = @"Other";
-        public static string employmentStatusDescriptorValue = @"Tenured%20or%20permanent";
         public static string beginDate = @"&beginDate=";
-        public static string SpecEduBeginDate = @"?beginDate=";
-        public static string beginDateDefaultValue = @"2018-09-04";
-        public static string programName = @"&programName=";
+        public static string SpecEduBeginDate = @"?beginDate=";                
         public static string programType = @"&programTypeDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramTypeDescriptor#");
         public static string SpecEduProgramName = @"&programName=";
         public static string SpecEduProgramType = @"&programType=";
         public static string studentUniqueId = @"?studentUniqueId=";
         public static string SpecEduStudentUniqueId = @"&studentUniqueId=";
         public static string programEducationOrganizationId = @"&programEducationOrganizationId=";
-        public static string schoolId = @"&schoolId=";
-        public static string schoolId1 = @"?schoolId=";
-        public static string sponsoredPositionTitle = @"#### - Sponsored Staff";
+        public static string schoolId = @"&schoolId=";                
         public static string program504PlanValue = Uri.EscapeDataString(@"504 Plan");
         public static string program504Plan = @"&programName=" + program504PlanValue;
         public static string programName504PlanValue = "504 Plan";
         public static string ProgramName = "Special Education";
+        public static string programName = @"&programName=";
         public static string specialEdProgramTypeDescriptor = @"&programTypeDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramTypeDescriptor#" + ProgramName);
         public static string alertProgramTypeDescriptor = @"&programTypeDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramTypeDescriptor#" + "Section 504 Placement");
-        public static string SchoolYear = ConfigurationManager.AppSettings["SchoolYear"];
-
-        public static string ProgramAssignmentDescriptor = @"?programAssignmentDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/ProgramAssignmentDescriptor#Regular Education");
-        public static string EmploymentStatusDescriptor = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://mybps.org/EmploymentStatusDescriptor#");
-        public static string EmploymentStatusDescriptorOther = @"&employmentStatusDescriptor=" + Uri.EscapeDataString("uri://ed-fi.org/EmploymentStatusDescriptor#");
-        public static string EmploymentStatusDescriptorField = "uri://mybps.org/EmploymentStatusDescriptor#";
-
-        public static string EmploymentStatusDescriptorFieldOther = "uri://ed-fi.org/EmploymentStatusDescriptor#";
-        public static string ProgramAssignmentDescriptorField = "uri://ed-fi.org/ProgramAssignmentDescriptor#Regular Education";
-        public static string OperationalStatusActive = "uri://ed-fi.org/OperationalStatusDescriptor#Active";
-        public static string OperationalStatusInactive = "uri://ed-fi.org/OperationalStatusDescriptor#Inactive";
-        public static string Active = "Active";
-        public static string PrimaryJobOrderAssignment = "1";
-        // PCG file  flags
-        public static bool ShouldExecuteIEPLoad { get; set; } = bool.Parse(ConfigurationManager.AppSettings["ShouldExecuteIEPLoad"]);
-        public static bool ShouldExecuteAlertLoad { get; set; } = bool.Parse(ConfigurationManager.AppSettings["ShouldExecuteAlertLoad"]);
-        //S3 bucket and file names
-        public static string bucket = "bucket";
-        public static string prefix = "prefix";
-        public static string directory = "directory";
-
-        public static string LOG_FILE { get; set; } = ConfigurationManager.AppSettings["LogFileDrive"] + DateTime.Today.ToString("yyyyMMdd") + ".csv";
-        public static string LOG_FILE_ATT { get; set; } = @"Log File";
-        public static string EmailFromAddress = ConfigurationManager.AppSettings["EmailFromAddr"];
-        public static string LOG_FILE_REC { get; set; } = ConfigurationManager.AppSettings["ReviewTeam"];
-        public static string LOG_FILE_SUB { get; set; } = @"IEPDATAReview";
-        public static string LOG_FILE_BODY { get; set; } = @"IEPDATAReview Log File";
-
-        public static string SmtpServerHost = ConfigurationManager.AppSettings["SmtpServerHost"];
         public static string EducationServiceCenter { get; set; } = @"ed-fi/educationServiceCenters";
-         public static string API_Program { get; set; } = @"ed-fi/programs";
+        public static string API_Program { get; set; } = @"ed-fi/programs";
         public static string API_ProgramServiceDescriptor { get; set; } = @"ed-fi/specialEducationProgramServiceDescriptors";
         public static string StudentSpecialEducation { get; set; } = @"ed-fi/studentSpecialEducationProgramAssociations";
         public static string StudentSpecialEducationLimit { get; set; } = @"ed-fi/studentSpecialEducationProgramAssociations?limit=1000";
@@ -77,19 +38,30 @@ namespace BPS.EdPlanLoaderCore.MetaData
         public static string API_StudentSchoolAssociation { get; set; } = @"ed-fi/studentSchoolAssociations";
         public static string SchoolUrl { get; set; } = @"ed-fi/schools";
         public static string API_SpecialEdServiceDescriptor { get; set; } = @"ed-fi/specialEducationSettingDescriptors";
-        
+
         public static string DataSourceXml { get; set; } = @"In Xml";
 
         public static string OutofBoundValue { get; set; } = "-1";
 
-        // Get and set the GetEmpStatusDescp on desc code
-        public static string GetEmpStatusDescp(string descCode)
-        {
-            if (descCode.Equals("Other"))
-                return EmploymentStatusDescriptorOther;
-            else
-                return EmploymentStatusDescriptor;
-        }
+        //S3 bucket and file names
+        public static string bucket = "my-bucket";
+        public static string prefix = "prefix";
+        public static string directory = "directory";
+
+        //Log files configuration 
+        public static string LOG_FILE { get; set; } = AppSettings.Configuration["AppSettings:LogFileDrive"]+ DateTime.Today.ToString("yyyyMMdd") + ".csv";
+        
+        public static string SmtpServerHost = AppSettings.Configuration["AppSettings:SmtpServerHost"];
+        public static string EmailFromAddress = AppSettings.Configuration["AppSettings:EmailFromAddr"];
+        public static string LOG_FILE_REC { get; set; } = AppSettings.Configuration["AppSettings:ReviewTeam"];
+        public static string LOG_FILE_ATT { get; set; } = @"Log File";
+        public static string LOG_FILE_SUB { get; set; } = @"IEPDATAReview";
+        public static string LOG_FILE_BODY { get; set; } = @"IEPDATAReview Log File";
+        
+
+        
+
+        
 
         // Get the Data Source as Txt or Xml for IEP and set it as source
         public static string GetDataSource(string dataSource)
@@ -127,63 +99,7 @@ namespace BPS.EdPlanLoaderCore.MetaData
 
         }
 
-        // Get and set the EmpDescField on desc code
-        public static string GetEmpStatusDescpField(string descCode)
-        {
-            if (descCode.Equals("Other"))
-                return EmploymentStatusDescriptorFieldOther;
-            else
-                return EmploymentStatusDescriptorField;
-
-
-
-        }
-
-        /// <summary>
-        /// Returns "1" if the input string is "Y", otherwise returns "2".
-        /// </summary>
-        /// <param name="num">The input string to evaluate.</param>
-        /// <returns>"1" if input is "Y"; otherwise, "2".</returns> 
-        public static string GetPreferredNumber(string num)
-        {
-            if (num.Equals("Y"))
-                return "1";
-            else
-                return "2";
-        }
-
-        /// <summary>
-        /// Returns the provided service delivery recurrence description if it's not null or empty;
-        /// otherwise, returns the default value "day".
-        /// </summary>
-        /// <param name="desc">The service delivery recurrence description.</param>
-        /// <returns>
-        /// The original description if not null or empty; otherwise, "day".
-        /// </returns>
-        public static string GetSDRecurrenceDesc(string desc)
-        {
-            if (!string.IsNullOrEmpty(desc))
-                return desc;
-            else
-                return "day";
-        }
-
-        /// <summary>
-        /// Returns the provided service delivery unit description if it's not null or empty; 
-        /// otherwise, returns the default value "Minute(s)".
-        /// </summary>
-        /// <param name="desc">The service delivery unit description.</param>
-        /// <returns>
-        /// The original description if not null or empty; otherwise, "Minute(s)".
-        /// </returns>
-        public static string GetSDUnitDesc(string desc)
-        {
-            if (!string.IsNullOrEmpty(desc))
-                return desc;
-            else
-                return "Minute(s)";
-        }
-       
+           
         /// <summary>
         /// Gets the sei program by seicode.
         /// </summary>
@@ -209,66 +125,6 @@ namespace BPS.EdPlanLoaderCore.MetaData
                 default:
                     return @"Not Eligible";
             }
-        }
-
-
-        /// <summary>
-        /// Converts a string indicator to a boolean value.
-        /// Returns true if the input is "Y" or "True" (case-sensitive), otherwise false.
-        /// </summary>
-        /// <param name="strIndicator">The string indicator to convert.</param>
-        /// <returns>
-        /// True if the input is "Y" or "True"; otherwise, false.
-        /// </returns>
-        public static Boolean GetBoolIndicator(string strIndicator)
-        {
-            bool indicator = false;
-            if (strIndicator == "Y" || strIndicator.Equals("Y") || strIndicator == "True" || strIndicator.Equals("True"))
-            {
-                indicator = true;
-            }
-
-            return indicator;
-
-        }
-
-        /// <summary>
-        /// Determines the value of the primary indicator based on the input string.
-        /// Returns false if the input is "Y" or "True" (case-sensitive), true otherwise.
-        /// </summary>
-        /// <param name="strIndicator">The indicator string to evaluate.</param>
-        /// <returns>
-        /// False if input is "Y" or "True", true otherwise.
-        /// </returns>
-        public static Boolean GetPrimaryIndicator(string strIndicator)
-        {
-            bool indicator = true;
-            if (strIndicator == "Y" || strIndicator.Equals("Y") || strIndicator == "True" || strIndicator.Equals("True"))
-            {
-                indicator = false;
-            }
-
-            return indicator;
-
-        }
-
-        // <summary>
-        /// Returns the standardized address descriptor. 
-        /// Converts "MAIL" or "mail" to "Mailing", otherwise returns the input as is.
-        /// </summary>
-        /// <param name="desc">The address descriptor string to standardize.</param>
-        /// <returns>
-        /// "Mailing" if the input is "MAIL" or "mail"; otherwise, returns the input string unchanged.
-        /// </returns>
-        public static string GetAddressDescriptor(string desc)
-        {
-            if (desc == "MAIL" || desc == "mail")
-            {
-
-                desc = "Mailing";
-
-            }
-            return desc;
         }
 
         /// <summary>
@@ -357,6 +213,21 @@ namespace BPS.EdPlanLoaderCore.MetaData
             }
 
 
+        }
+
+        public static string GetSDRecurrenceDesc(string desc)
+        {
+            if (!string.IsNullOrEmpty(desc))
+                return desc;
+            else
+                return "day";
+        }
+        public static string GetSDUnitDesc(string desc)
+        {
+            if (!string.IsNullOrEmpty(desc))
+                return desc;
+            else
+                return "Minute(s)";
         }
 
         /// <summary>
